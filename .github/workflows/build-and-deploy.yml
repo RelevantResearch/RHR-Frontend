@@ -1,0 +1,76 @@
+name: Build and Deploy Next.js App
+
+on:
+  push:
+    branches:
+      - main   # Trigger on push to the main branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout the code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Setup Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'  # Match your app's Node.js version
+
+      # 3️⃣ Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # 4️⃣ Build the Next.js app
+      - name: Build the Next.js app
+        run: npm run build
+
+      # 5️⃣ Copy build artifacts to the server
+      - name: Copy files to the server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ubuntu   # EC2 default user
+          key: ${{ secrets.DEPLOY_KEY }}
+          port: 22
+          source: |
+            .next/
+            public/
+            package.json
+            package-lock.json
+          target: /home/ubuntu/temp_deploy
+
+      # 6️⃣ SSH into the server and run deployment commands as root
+      - name: Deploy app on server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ubuntu
+          key: ${{ secrets.DEPLOY_KEY }}
+          port: 22
+          script: |
+            # Elevate to root user using sudo su with a heredoc
+            sudo su <<EOF
+            # Sync the copied files to the app directory
+            rsync -av --delete /home/ubuntu/temp_deploy/ /var/www/RHR-Frontend/
+
+            # Navigate to app directory
+            cd /var/www/RHR-Frontend
+
+            # Add npm to root PATH if needed
+            export PATH=$PATH:/usr/local/bin
+
+            # Install production dependencies
+            npm ci --omit=dev
+
+            # Start or restart the app using PM2
+            pm2 start npm --name "rhr-frontend" -- start || pm2 restart rhr-frontend
+
+            # Save PM2 process list for restarts on reboot
+            pm2 save
+
+            exit
+            EOF
