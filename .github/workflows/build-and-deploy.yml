@@ -29,13 +29,13 @@ jobs:
         run: npm run build
 
       # 5️⃣ Debug: List workspace root
-      - name: List workspace root
+      - name: Debug: List workspace root
         run: |
-          echo "Workspace root:"
+          echo "Workspace root contents:"
           ls -la
 
       # 6️⃣ Debug: Check .next directory
-      - name: Check .next directory
+      - name: Debug: Check .next directory
         run: |
           if [ -d ".next" ]; then
             echo ".next directory exists:"
@@ -46,7 +46,7 @@ jobs:
           fi
 
       # 7️⃣ Debug: Check package.json and package-lock.json
-      - name: Check package files
+      - name: Debug: Check package files
         run: |
           if [ -f "package.json" ]; then
             echo "package.json found!"
@@ -66,11 +66,11 @@ jobs:
       - name: Debug: Check all build artifacts before upload
         run: |
           echo "Checking .next directory:"
-          ls -la .next || echo ".next is missing!"
+          ls -la .next || echo ".next directory missing!"
           echo "Checking package.json:"
-          ls -la package.json || echo "package.json is missing!"
+          ls -la package.json || echo "package.json missing!"
           echo "Checking package-lock.json:"
-          ls -la package-lock.json || echo "package-lock.json is missing!"
+          ls -la package-lock.json || echo "package-lock.json missing!"
 
       # 9️⃣ Ensure target directory exists on the server
       - name: Ensure target directory exists
