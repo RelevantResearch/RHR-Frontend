@@ -62,7 +62,17 @@ jobs:
             exit 1
           fi
 
-      # 8️⃣ Ensure target directory exists on the server
+      # 8️⃣ Debug: Check all build artifacts before upload
+      - name: Debug: Check all build artifacts before upload
+        run: |
+          echo "Checking .next directory:"
+          ls -la .next || echo ".next is missing!"
+          echo "Checking package.json:"
+          ls -la package.json || echo "package.json is missing!"
+          echo "Checking package-lock.json:"
+          ls -la package-lock.json || echo "package-lock.json is missing!"
+
+      # 9️⃣ Ensure target directory exists on the server
       - name: Ensure target directory exists
         uses: appleboy/ssh-action@master
         with:
@@ -73,7 +83,7 @@ jobs:
           script: |
             mkdir -p /home/ubuntu/temp_deploy
 
-      # 9️⃣ Copy build artifacts to the server
+      # 🔟 Copy build artifacts to the server
       - name: Copy files to the server
         uses: appleboy/scp-action@master
         with:
