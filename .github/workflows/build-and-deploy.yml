@@ -45,7 +45,7 @@ jobs:
             exit 1
           fi
 
-      # 8️⃣ Debug: Check package.json and package-lock.json
+      # 7️⃣ Debug: Check package.json and package-lock.json
       - name: Check package files
         run: |
           if [ -f "package.json" ]; then
@@ -54,7 +54,6 @@ jobs:
             echo "❌ package.json not found!"
             exit 1
           fi
-
           if [ -f "package-lock.json" ]; then
             echo "package-lock.json found!"
           else
@@ -62,7 +61,7 @@ jobs:
             exit 1
           fi
 
-      # 9️⃣ Copy build artifacts to the server
+      # 8️⃣ Copy build artifacts to the server
       - name: Copy files to the server
         uses: appleboy/scp-action@master
         with:
@@ -72,7 +71,6 @@ jobs:
           port: 22
           source: |
             .next/
-            public/
             package.json
             package-lock.json
           target: /home/ubuntu/temp_deploy
