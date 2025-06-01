@@ -3,7 +3,7 @@ name: Build and Deploy Next.js App
 on:
   push:
     branches:
-      - main   # Trigger on push to the main branch
+      - main
 
 jobs:
   build-and-deploy:
@@ -14,11 +14,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Node.js
+      # 2️⃣ Setup Node.js (version 22)
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '22'
 
       # 3️⃣ Install dependencies
       - name: Install dependencies
