@@ -29,13 +29,13 @@ jobs:
         run: npm run build
 
       # 5️⃣ Debug: List workspace root
-      - name: Debug List workspace root
+      - name: Debug: List workspace root
         run: |
           echo "Workspace root contents:"
           ls -la
 
       # 6️⃣ Debug: Check .next directory
-      - name: Debug Check .next directory
+      - name: Debug: Check .next directory
         run: |
           if [ -d ".next" ]; then
             echo ".next directory exists:"
@@ -46,7 +46,7 @@ jobs:
           fi
 
       # 7️⃣ Debug: Check package.json and package-lock.json
-      - name: Debug Check package files
+      - name: Debug: Check package files
         run: |
           if [ -f "package.json" ]; then
             echo "package.json found!"
@@ -63,7 +63,7 @@ jobs:
           fi
 
       # 8️⃣ Debug: Check all build artifacts before upload
-      - name: Debug Check all build artifacts before upload
+      - name: Debug: Check all build artifacts before upload
         run: |
           echo "Checking .next directory:"
           ls -la .next || echo ".next directory missing!"
@@ -93,6 +93,8 @@ jobs:
           port: 22
           source: |
             .next/
+            package.json
+            package-lock.json
           target: /home/ubuntu/temp_deploy
 
       # 🔟 SSH into the server and run deployment commands as root
@@ -105,7 +107,10 @@ jobs:
           port: 22
           script: |
             sudo su <<'EOF'
-            export PATH=$PATH:/usr/local/bin
+            export PATH=$PATH:/usr/local/bin:/usr/bin:/bin
+            echo "Node location: $(which node)"
+            echo "NPM location: $(which npm)"
+            echo "PM2 location: $(which pm2)"
             rsync -av --delete /home/ubuntu/temp_deploy/ /var/www/RHR-Frontend/
             cd /var/www/RHR-Frontend
             npm ci --omit=dev
