@@ -29,13 +29,13 @@ jobs:
         run: npm run build
 
       # 5️⃣ Debug: List workspace root
-      - name: Debug: List workspace root
+      - name: List workspace root
         run: |
           echo "Workspace root:"
           ls -la
 
       # 6️⃣ Debug: Check .next directory
-      - name: Debug: Check .next directory
+      - name: Check .next directory
         run: |
           if [ -d ".next" ]; then
             echo ".next directory exists:"
@@ -46,7 +46,7 @@ jobs:
           fi
 
       # 7️⃣ Debug: Check public directory
-      - name: Debug: Check public directory
+      - name: Check public directory
         run: |
           if [ -d "public" ]; then
             echo "public directory exists:"
@@ -57,7 +57,7 @@ jobs:
           fi
 
       # 8️⃣ Debug: Check package.json and package-lock.json
-      - name: Debug: Check package files
+      - name: Check package files
         run: |
           if [ -f "package.json" ]; then
             echo "package.json found!"
