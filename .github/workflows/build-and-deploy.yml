@@ -35,7 +35,7 @@ jobs:
           ls -la
 
       # 6️⃣ Debug: Check .next directory
-      - name: Debug: Check .next directory
+      - name: Debug Check .next directory
         run: |
           if [ -d ".next" ]; then
             echo ".next directory exists:"
@@ -46,7 +46,7 @@ jobs:
           fi
 
       # 7️⃣ Debug: Check package.json and package-lock.json
-      - name: Debug: Check package files
+      - name: Debug Check package files
         run: |
           if [ -f "package.json" ]; then
             echo "package.json found!"
@@ -63,7 +63,7 @@ jobs:
           fi
 
       # 8️⃣ Debug: Check all build artifacts before upload
-      - name: Debug: Check all build artifacts before upload
+      - name: Debug Check all build artifacts before upload
         run: |
           echo "Checking .next directory:"
           ls -la .next || echo ".next directory missing!"
