@@ -93,8 +93,6 @@ jobs:
           port: 22
           source: |
             .next/
-            package.json
-            package-lock.json
           target: /home/ubuntu/temp_deploy
 
       # 🔟 SSH into the server and run deployment commands as root
