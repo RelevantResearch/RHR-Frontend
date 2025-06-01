@@ -45,17 +45,6 @@ jobs:
             exit 1
           fi
 
-      # 7️⃣ Debug: Check public directory
-      - name: Check public directory
-        run: |
-          if [ -d "public" ]; then
-            echo "public directory exists:"
-            ls -la public
-          else
-            echo "❌ public directory does not exist!"
-            exit 1
-          fi
-
       # 8️⃣ Debug: Check package.json and package-lock.json
       - name: Check package files
         run: |
