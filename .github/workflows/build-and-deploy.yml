@@ -97,7 +97,7 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           port: 22
           script: |
-            sudo su <<EOF
+            sudo su <<'EOF'
             rsync -av --delete /home/ubuntu/temp_deploy/ /var/www/RHR-Frontend/
             cd /var/www/RHR-Frontend
             export PATH=$PATH:/usr/local/bin
