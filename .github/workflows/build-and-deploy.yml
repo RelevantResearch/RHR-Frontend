@@ -83,9 +83,7 @@ jobs:
           port: 22
           source: |
             .next/
-            package.json
-            package-lock.json
-          target: /home/ubuntu/temp_deploy
+          target: /home/ubuntu/
 
       # 🔟 SSH into the server and run deployment commands as root
       - name: Deploy app on server
@@ -97,7 +95,7 @@ jobs:
           port: 22
           script: |
             sudo su <<'EOF'
-            rsync -av --delete /home/ubuntu/temp_deploy/ /var/www/RHR-Frontend/
+            rsync -av --delete /home/ubuntu/ /var/www/RHR-Frontend/
             cd /var/www/RHR-Frontend
             export PATH=$PATH:/usr/local/bin
             npm ci --omit=dev
