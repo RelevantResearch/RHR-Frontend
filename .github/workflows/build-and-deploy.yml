@@ -1,4 +1,118 @@
-name: Build and Deploy Next.js App
+# name: Build and Deploy Next.js App
+
+# on:
+#   push:
+#     branches:
+#       - main
+
+# jobs:
+#   build-and-deploy:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       # 1️⃣ Checkout the code
+#       - name: Checkout repository
+#         uses: actions/checkout@v3
+
+#       # 2️⃣ Setup Node.js (version 22)
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: '22'
+
+#       # 3️⃣ Install dependencies
+#       - name: Install dependencies
+#         run: npm ci
+
+#       # 4️⃣ Build the Next.js app
+#       - name: Build the Next.js app
+#         run: npm run build
+
+#       # 5️⃣ Debug: List workspace root
+#       - name: Debug List workspace root
+#         run: |
+#           echo "Workspace root contents:"
+#           ls -la
+
+#       # 6️⃣ Debug: Check .next directory
+#       - name: Debug Check .next directory
+#         run: |
+#           if [ -d ".next" ]; then
+#             echo ".next directory exists:"
+#             ls -la .next
+#           else
+#             echo "❌ .next directory does not exist!"
+#             exit 1
+#           fi
+
+#       # 7️⃣ Debug: Check package.json and package-lock.json
+#       - name: Debug Check package files
+#         run: |
+#           if [ -f "package.json" ]; then
+#             echo "package.json found!"
+#           else
+#             echo "❌ package.json not found!"
+#             exit 1
+#           fi
+
+#           if [ -f "package-lock.json" ]; then
+#             echo "package-lock.json found!"
+#           else
+#             echo "❌ package-lock.json not found!"
+#             exit 1
+#           fi
+
+#       # 8️⃣ Debug: Check all build artifacts before upload
+#       - name: Debug Check all build artifacts before upload
+#         run: |
+#           echo "Checking .next directory:"
+#           ls -la .next || echo ".next directory missing!"
+#           echo "Checking package.json:"
+#           ls -la package.json || echo "package.json missing!"
+#           echo "Checking package-lock.json:"
+#           ls -la package-lock.json || echo "package-lock.json missing!"
+
+#       # 9️⃣ Ensure target directory exists on the server
+#       - name: Ensure target directory exists
+#         uses: appleboy/ssh-action@master
+#         with:
+#           host: ${{ secrets.SERVER_IP }}
+#           username: ubuntu
+#           key: ${{ secrets.DEPLOY_KEY }}
+#           port: 22
+#           script: |
+#             mkdir -p /home/ubuntu/temp_deploy
+
+#       # 🔟 Copy build artifacts to the server
+#       - name: Copy files to the server
+#         uses: appleboy/scp-action@master
+#         with:
+#           host: ${{ secrets.SERVER_IP }}
+#           username: ubuntu
+#           key: ${{ secrets.DEPLOY_KEY }}
+#           port: 22
+#           source: |
+#             .next/
+#           target: /home/ubuntu/temp_deploy
+
+#       # 🔟 SSH into the server and run deployment commands as root
+#       - name: Deploy app on server
+#         uses: appleboy/ssh-action@master
+#         with:
+#           host: ${{ secrets.SERVER_IP }}
+#           username: ubuntu
+#           key: ${{ secrets.DEPLOY_KEY }}
+#           port: 22
+#           script: |
+#             export PATH=$PATH:/usr/local/bin:/usr/bin:/bin
+#             which node
+#             which npm
+#             which pm2
+#             rsync -av --delete /home/ubuntu/temp_deploy/ /var/www/RHR-Frontend/
+#             cd /var/www/RHR-Frontend
+
+
+name: Build, Scan, and Deploy Next.js App
 
 on:
   push:
@@ -6,7 +120,42 @@ on:
       - main
 
 jobs:
+  # 1️⃣ Security Scanning (CodeQL + Dependency Checks)
+  security-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 🔍 Run CodeQL Static Analysis (JavaScript/TypeScript)
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the app (needed for CodeQL analysis)
+        run: npm run build
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+      # ⚠️ Check for vulnerable dependencies
+      - name: Check for outdated/vulnerable packages
+        run: |
+          npm outdated
+          npm audit --audit-level=high
+
+  # 2️⃣ Build & Deploy (only runs if security scan passes)
   build-and-deploy:
+    needs: security-scan  # ⚠️ Waits for security checks first
     runs-on: ubuntu-latest
 
     steps:
@@ -20,7 +169,7 @@ jobs:
         with:
           node-version: '22'
 
-      # 3️⃣ Install dependencies
+      # 3️⃣ Install dependencies (clean install)
       - name: Install dependencies
         run: npm ci
 
@@ -28,51 +177,14 @@ jobs:
       - name: Build the Next.js app
         run: npm run build
 
-      # 5️⃣ Debug: List workspace root
-      - name: Debug List workspace root
+      # 5️⃣ Verify build artifacts
+      - name: Verify build outputs
         run: |
-          echo "Workspace root contents:"
-          ls -la
+          echo "Build artifacts:"
+          ls -la .next
+          [ -f ".next/BUILD_ID" ] || { echo "❌ Build failed!"; exit 1; }
 
-      # 6️⃣ Debug: Check .next directory
-      - name: Debug Check .next directory
-        run: |
-          if [ -d ".next" ]; then
-            echo ".next directory exists:"
-            ls -la .next
-          else
-            echo "❌ .next directory does not exist!"
-            exit 1
-          fi
-
-      # 7️⃣ Debug: Check package.json and package-lock.json
-      - name: Debug Check package files
-        run: |
-          if [ -f "package.json" ]; then
-            echo "package.json found!"
-          else
-            echo "❌ package.json not found!"
-            exit 1
-          fi
-
-          if [ -f "package-lock.json" ]; then
-            echo "package-lock.json found!"
-          else
-            echo "❌ package-lock.json not found!"
-            exit 1
-          fi
-
-      # 8️⃣ Debug: Check all build artifacts before upload
-      - name: Debug Check all build artifacts before upload
-        run: |
-          echo "Checking .next directory:"
-          ls -la .next || echo ".next directory missing!"
-          echo "Checking package.json:"
-          ls -la package.json || echo "package.json missing!"
-          echo "Checking package-lock.json:"
-          ls -la package-lock.json || echo "package-lock.json missing!"
-
-      # 9️⃣ Ensure target directory exists on the server
+      # 6️⃣ Deploy to server
       - name: Ensure target directory exists
         uses: appleboy/ssh-action@master
         with:
@@ -83,7 +195,7 @@ jobs:
           script: |
             mkdir -p /home/ubuntu/temp_deploy
 
-      # 🔟 Copy build artifacts to the server
+      # 7️⃣ Upload build files
       - name: Copy files to the server
         uses: appleboy/scp-action@master
         with:
@@ -93,9 +205,11 @@ jobs:
           port: 22
           source: |
             .next/
+            package.json
+            package-lock.json
           target: /home/ubuntu/temp_deploy
 
-      # 🔟 SSH into the server and run deployment commands as root
+      # 8️⃣ Run deployment commands
       - name: Deploy app on server
         uses: appleboy/ssh-action@master
         with:
@@ -104,12 +218,17 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           port: 22
           script: |
-            export PATH=$PATH:/usr/local/bin:/usr/bin:/bin
-            which node
-            which npm
-            which pm2
+            # Move files to production directory
             rsync -av --delete /home/ubuntu/temp_deploy/ /var/www/RHR-Frontend/
+            
+            # Install production dependencies
             cd /var/www/RHR-Frontend
+            npm ci --omit=dev
+            
+            # Restart PM2 process
+            pm2 start npm --name "rhr-frontend" -- start || pm2 restart rhr-frontend
+            pm2 save
+            pm2 list
             npm ci --omit=dev
             pm2 start npm --name "rhr-frontend" -- start || pm2 restart rhr-frontend
             pm2 save
