@@ -28,42 +28,42 @@ jobs:
       - name: Build the Next.js app
         run: npm run build
 
-      # 5️⃣ Debug: List workspace root
-      - name: Debug: List workspace root
+      # 5️⃣ List workspace root
+      - name: List workspace root
         run: |
           echo "Workspace root contents:"
           ls -la
 
-      # 6️⃣ Debug: Check .next directory
-      - name: Debug: Check .next directory
+      # 6️⃣ Check .next directory
+      - name: Check .next directory
         run: |
           if [ -d ".next" ]; then
             echo ".next directory exists:"
             ls -la .next
           else
-            echo "❌ .next directory does not exist!"
+            echo ".next directory does not exist!"
             exit 1
           fi
 
-      # 7️⃣ Debug: Check package.json and package-lock.json
-      - name: Debug: Check package files
+      # 7️⃣ Check package files
+      - name: Check package files
         run: |
           if [ -f "package.json" ]; then
             echo "package.json found!"
           else
-            echo "❌ package.json not found!"
+            echo "package.json not found!"
             exit 1
           fi
 
           if [ -f "package-lock.json" ]; then
             echo "package-lock.json found!"
           else
-            echo "❌ package-lock.json not found!"
+            echo "package-lock.json not found!"
             exit 1
           fi
 
-      # 8️⃣ Debug: Check all build artifacts before upload
-      - name: Debug: Check all build artifacts before upload
+      # 8️⃣ Check all build artifacts before upload
+      - name: Check all build artifacts before upload
         run: |
           echo "Checking .next directory:"
           ls -la .next || echo ".next directory missing!"
@@ -97,7 +97,7 @@ jobs:
             package-lock.json
           target: /home/ubuntu/temp_deploy
 
-      # 🔟 SSH into the server and run deployment commands as ubuntu
+      # 1️⃣1️⃣ Deploy app on server
       - name: Deploy app on server
         uses: appleboy/ssh-action@master
         with:
