@@ -28,42 +28,42 @@ jobs:
       - name: Build the Next.js app
         run: npm run build
 
-      # 5️⃣ List workspace root
-      - name: List workspace root
+      # 5️⃣ Debug: List workspace root
+      - name: Debug List workspace root
         run: |
           echo "Workspace root contents:"
           ls -la
 
-      # 6️⃣ Check .next directory
-      - name: Check .next directory
+      # 6️⃣ Debug: Check .next directory
+      - name: Debug Check .next directory
         run: |
           if [ -d ".next" ]; then
             echo ".next directory exists:"
             ls -la .next
           else
-            echo ".next directory does not exist!"
+            echo "❌ .next directory does not exist!"
             exit 1
           fi
 
-      # 7️⃣ Check package files
-      - name: Check package files
+      # 7️⃣ Debug: Check package.json and package-lock.json
+      - name: Debug Check package files
         run: |
           if [ -f "package.json" ]; then
             echo "package.json found!"
           else
-            echo "package.json not found!"
+            echo "❌ package.json not found!"
             exit 1
           fi
 
           if [ -f "package-lock.json" ]; then
             echo "package-lock.json found!"
           else
-            echo "package-lock.json not found!"
+            echo "❌ package-lock.json not found!"
             exit 1
           fi
 
-      # 8️⃣ Check all build artifacts before upload
-      - name: Check all build artifacts before upload
+      # 8️⃣ Debug: Check all build artifacts before upload
+      - name: Debug Check all build artifacts before upload
         run: |
           echo "Checking .next directory:"
           ls -la .next || echo ".next directory missing!"
@@ -83,15 +83,6 @@ jobs:
           script: |
             mkdir -p /home/ubuntu/temp_deploy
 
-      - name: Confirm build artifacts exist
-        run: |
-          echo "Checking .next directory:"
-          ls -la .next || { echo ".next directory missing! Build might have failed!"; exit 1; }
-          echo "Checking package.json:"
-          ls -la package.json || { echo "package.json missing!"; exit 1; }
-          echo "Checking package-lock.json:"
-          ls -la package-lock.json || { echo "package-lock.json missing!"; exit 1; }
-
       # 🔟 Copy build artifacts to the server
       - name: Copy files to the server
         uses: appleboy/scp-action@master
@@ -102,11 +93,9 @@ jobs:
           port: 22
           source: |
             .next/
-            package.json
-            package-lock.json
           target: /home/ubuntu/temp_deploy
 
-      # 1️⃣1️⃣ Deploy app on server
+      # 🔟 SSH into the server and run deployment commands as root
       - name: Deploy app on server
         uses: appleboy/ssh-action@master
         with:
@@ -115,12 +104,10 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           port: 22
           script: |
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             export PATH=$PATH:/usr/local/bin:/usr/bin:/bin
-            echo "Node location: $(which node)"
-            echo "NPM location: $(which npm)"
-            echo "PM2 location: $(which pm2)"
+            which node
+            which npm
+            which pm2
             rsync -av --delete /home/ubuntu/temp_deploy/ /var/www/RHR-Frontend/
             cd /var/www/RHR-Frontend
             npm ci --omit=dev
