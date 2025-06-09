@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui/sonner';
 import Navigation from '@/components/layout/navigation';
 
 export const metadata: Metadata = {
-  title: 'HRMS - Human Resource Management System',
+  title: 'Relevant Research',
   description: 'Modern HR management solution',
 };
 
