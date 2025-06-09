@@ -69,7 +69,7 @@ export default function LoginForm() {
           <div className="flex justify-center mb-4">
             <Lock className="h-12 w-12 text-primary" />
           </div>
-          <h2 className="text-2xl font-bold">Welcome back</h2>
+          <h2 className="text-2xl font-bold">Welcome Team</h2>
           <p className="text-gray-500">Enter your credentials to continue</p>
         </CardHeader>
         <form onSubmit={handleSubmit}>

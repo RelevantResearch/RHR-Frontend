@@ -335,7 +335,7 @@ export default function Navigation({ children }: NavigationProps) {
                 )}
               </Button>
             )}
-            <h1 className="text-xl font-bold">HRMS</h1>
+            <h1 className="text-xl font-bold">Relevant Research</h1>
           </div>
           <div className="flex items-center gap-4">
             <NotificationBell />
