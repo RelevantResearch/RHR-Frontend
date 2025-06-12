@@ -42,14 +42,9 @@ import {
 import { format } from 'date-fns';
 import PasswordChange from '@/components/auth/password-change';
 
-
-
-
 interface NavigationProps {
   children: React.ReactNode;
 }
-
-
 
 export default function Navigation({ children }: NavigationProps) {
   const { user, logout } = useAuth();
@@ -77,8 +72,8 @@ export default function Navigation({ children }: NavigationProps) {
     return <>{children}</>;
   }
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.push('/');
   };
 
@@ -415,5 +410,3 @@ export default function Navigation({ children }: NavigationProps) {
     </div>
   );
 }
-
-
