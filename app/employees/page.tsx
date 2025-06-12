@@ -1,8 +1,9 @@
 'use client';
 
 
-// import { createUserApi } from '@/api/user';
-import { useState } from 'react';
+import { createUserApi } from '@/api/user';
+import { useEmployees } from '@/hooks/useEmployees';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useTicketStore } from '@/lib/ticket-store';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,6 +55,7 @@ const departments = [
   "Public Impact",
 ];
 
+
 const sampleEmployees = [
   {
     id: '1',
@@ -104,14 +106,20 @@ const emptyEmployeeForm = {
 };
 
 export default function EmployeesPage() {
-  const [employees, setEmployees] = useState(sampleEmployees);
-  const [selectedDepartment, setSelectedDepartment] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const { employees: fetchedEmployees, loading } = useEmployees();
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const [newEmployee, setNewEmployee] = useState<typeof emptyEmployeeForm>(emptyEmployeeForm);
   const [showEmployeeForm, setShowEmployeeForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
+  useEffect(() => {
+    if (!loading && fetchedEmployees.length > 0) {
+      setEmployees(fetchedEmployees);
+    }
+  }, [fetchedEmployees, loading]);
 
   const handleAddEmployee = async () => {
     if (!newEmployee.name || !newEmployee.email || !newEmployee.password || !newEmployee.phone) {
@@ -135,7 +143,7 @@ export default function EmployeesPage() {
     console.log('Payload:', payload);
   
     try {
-      // await createUserApi(payload);
+      await createUserApi(payload);
       toast.success('User created successfully');
       setShowEmployeeForm(false); 
       setNewEmployee(emptyEmployeeForm);
@@ -146,9 +154,9 @@ export default function EmployeesPage() {
   
   
 
-  const handleDeleteEmployee = (id: string) => {
-    setEmployees(employees.filter(emp => emp.id !== id));
-    toast.success('Employee deleted successfully');
+  const handleDeleteEmployee = (id: number | string) => {
+    setEmployees(prev => prev.filter(emp => emp.id !== id));
+    toast.success("Employee deleted successfully");
   };
 
   const filteredEmployees = employees.filter(employee => {

@@ -22,6 +22,8 @@ interface CreateUserParams {
   salary?: number;
 }
 
+
+//create user api
 export const createUserApi = async (data: CreateUserParams) => {
   try {
     const response = await axiosInstance.post('/user/admin/create', data, {
@@ -45,3 +47,14 @@ export const updateUserProfile = async (payload: any) => {
   }
 };
 
+
+// Fetch all users (admin only)
+export const getAllEmployees = async () => {
+  try {
+    const response = await axiosInstance.get("/user/admin/all");
+    return response.data?.users || [];
+  } catch (error) {
+    console.error("Failed to fetch employee list from /user/admin/all", error);
+    throw error;
+  }
+};
