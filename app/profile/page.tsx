@@ -5,7 +5,6 @@ import { createBankDetails, getBankDetails } from "@/api/bank";
 import { useEffect } from "react";
 import { useState, useRef } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { User } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,9 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { UserCog, Upload, Camera, AlertCircle, Building2 } from "lucide-react";
+import { User, Upload, Camera, AlertCircle, Building2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
 
 
 interface BankDetailsPayload {
@@ -29,8 +27,8 @@ interface BankDetailsPayload {
   acNumber: string;
   tax: string;
   userId: string;
-  branch: string;                 
-  additionalInformation: string; 
+  branch?: string;
+  additionalInformation?: string;
 }
 
 interface ProfileData {
@@ -38,6 +36,7 @@ interface ProfileData {
   email: string;
   phone: string;
   address: string;
+  dateOfBirth: string;
   idType: "passport" | "citizenship" | "driving-license" | "";
   frontImage: string | null;
   panCardImage: string | null;
@@ -48,8 +47,6 @@ interface ProfileData {
     bankAddress: string;
     accountHolderName: string;
     panId: string;
-    branch?: string | null;
-    additionalInformation?: string | null;
   };
 }
 
@@ -61,6 +58,7 @@ export default function ProfilePage() {
     email: user?.email || "",
     phone: user?.phone || "",
     address: user?.address || "",
+    dateOfBirth: user?.dateOfBirth || "",
     idType: user?.idType || "",
     frontImage: user?.frontImage || null,
     panCardImage: user?.panCardImage || null,
@@ -71,28 +69,44 @@ export default function ProfilePage() {
       bankAddress: "",
       accountHolderName: "",
       panId: "",
-  
+
     },
   });
+  const isPersonalInfoEmpty = () => {
+    return !profileData.name && !profileData.email && !profileData.phone && !profileData.address && !profileData.dateOfBirth;
+  };
+
+  const isBankInfoEmpty = () => {
+    const bank = profileData.bankDetails;
+    return !bank.accountNumber && !bank.bankName && !bank.accountHolderName && !bank.panId && !bank.bankAddress;
+  };
+
+  const isDocumentsEmpty = () => {
+    return !profileData.panCardImage && !profileData.frontImage;
+  };
+
+  const isAvatarEmpty = () => {
+    return !profileData.avatar;
+  };
 
   useEffect(() => {
-      if (user) {
-        // Set basic profile info first
-        setProfileData(prev => ({
-          ...prev,
-          name: user.name || "",
-          email: user.email || "",
-          phone: user.phone || "",
-          address: user.address || "",
-          idType: user.idType || "",
-          frontImage: user.frontImage || null,
-          panCardImage: user.panCardImage || null,
-          avatar: user.avatar || null,
-        }));
-  
-        
-      }
-    }, [user]);
+    if (user) {
+      // Set basic profile info first
+      setProfileData(prev => ({
+        ...prev,
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        address: user.address || "",
+        idType: user.idType || "",
+        frontImage: user.frontImage || null,
+        panCardImage: user.panCardImage || null,
+        avatar: user.avatar || null,
+      }));
+
+
+    }
+  }, [user]);
 
   const [editingSection, setEditingSection] = useState<'personal' | 'bank' | 'documents' | 'avatar' | null>(null);
   const [isAdding, setIsAdding] = useState<'personal' | 'bank' | 'documents' | 'avatar' | null>(null);
@@ -105,23 +119,35 @@ export default function ProfilePage() {
             setProfileData((prev) => ({
               ...prev,
               bankDetails: {
-                accountHolderName: data.acName,
-                accountNumber: data.acNumber,
-                bankName: data.name,
-                panId: data.tax,
-                bankAddress: data.address,
-                branch: data.branch || "Nothing",
-                additionalInformation: data.additionalInformation || "Nothing",
+                accountHolderName: data.acName || "",
+                accountNumber: data.acNumber || "",
+                bankName: data.name || "",
+                panId: data.tax || "",
+                bankAddress: data.address || "",
+                // branch and additionalInformation are intentionally ignored
+              },
+            }));
+          } else {
+            setProfileData((prev) => ({
+              ...prev,
+              bankDetails: {
+                accountHolderName: "",
+                accountNumber: "",
+                bankName: "",
+                panId: "",
+                bankAddress: "",
+                // No branch or additional info
               },
             }));
           }
         })
         .catch((error) => {
+          console.error("Bank details fetch error:", error);
           toast.error("Failed to fetch bank details");
-          console.error(error);
         });
     }
   }, [user]);
+
 
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -166,50 +192,12 @@ export default function ProfilePage() {
     e.preventDefault();
 
     // Validate based on which section is being edited/added
-    // if (editingSection === 'personal' || isAdding === 'personal') {
-    //   if (!profileData.name || !profileData.email || !profileData.phone || !profileData.address) {
-    //     toast.error("Please fill in all required personal information");
-    //     return;
-    //   }
-    // }
-
     if (editingSection === 'personal' || isAdding === 'personal') {
       if (!profileData.name || !profileData.email || !profileData.phone || !profileData.address) {
         toast.error("Please fill in all required personal information");
         return;
       }
-
-      try {
-        const payload = {
-          name: profileData.name,
-          email: profileData.email,
-          phone: profileData.phone,
-          address: profileData.address,
-
-        };
-
-
-        await updateProfile(payload);
-
-        setEditingSection(null);
-        setIsAdding(null);
-        toast.success("Profile updated successfully");
-      } catch (error) {
-        toast.error("Failed to update profile");
-      }
     }
-
-
-    // if (editingSection === 'bank' || isAdding === 'bank') {
-    //   if (!profileData.bankDetails.accountNumber ||
-    //     !profileData.bankDetails.bankName ||
-    //     !profileData.bankDetails.accountHolderName ||
-    //     !profileData.bankDetails.panId ||
-    //     !profileData.bankDetails.bankAddress) {
-    //     toast.error("Please fill in all required bank details");
-    //     return;
-    //   }
-    // }
 
     if (editingSection === 'bank' || isAdding === 'bank') {
       const bank = profileData.bankDetails;
@@ -235,6 +223,7 @@ export default function ProfilePage() {
         };
 
 
+
         try {
           await createBankDetails(payload);
           toast.success("Bank details added successfully");
@@ -250,22 +239,17 @@ export default function ProfilePage() {
 
 
     if (editingSection === 'personal' || isAdding === 'personal') {
-      if (!profileData.name || !profileData.email || !profileData.phone || !profileData.address) {
+      if (!profileData.name || !profileData.email || !profileData.phone || !profileData.address || !profileData.dateOfBirth) {
         toast.error("Please fill in all required personal information");
         return;
       }
     }
 
-    
-
-    
-
-
 
 
     if (editingSection === 'documents' || isAdding === 'documents') {
       if (!profileData.panCardImage) {
-        toast.error("PAN Card is required");
+        toast.error("Tax Card is required");
         return;
       }
 
@@ -296,7 +280,7 @@ export default function ProfilePage() {
   const handleAction = (section: 'personal' | 'bank' | 'documents' | 'avatar', action: 'add' | 'update') => {
     if (action === 'add') {
       // Check if data already exists
-      if (section === 'personal' && (profileData.name || profileData.email || profileData.phone || profileData.address)) {
+      if (section === 'personal' && (profileData.name || profileData.email || profileData.phone || profileData.address || profileData.dateOfBirth)) {
         toast.error("Personal information already exists. Click Update to modify.");
         return;
       }
@@ -316,7 +300,7 @@ export default function ProfilePage() {
       setEditingSection(null);
     } else {
       // Check if data exists before allowing update
-      if (section === 'personal' && (!profileData.name && !profileData.email && !profileData.phone && !profileData.address)) {
+      if (section === 'personal' && (!profileData.name && !profileData.email && !profileData.phone && !profileData.address && !profileData.dateOfBirth)) {
         toast.error("No personal information exists. Please add new information first.");
         return;
       }
@@ -346,7 +330,7 @@ export default function ProfilePage() {
   return (
     <div className="container mx-auto py-8">
       <div className="flex items-center gap-4 mb-8">
-        <UserCog className="h-8 w-8 text-primary" />
+        <User className="h-8 w-8 text-primary" />
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Profile Settings</h1>
           <p className="text-muted-foreground">Update your personal information</p>
@@ -358,7 +342,7 @@ export default function ProfilePage() {
             <CardTitle>Profile Picture</CardTitle>
             <div className="flex gap-2">
               {!editingSection && !isAdding && (
-                <>
+                isAvatarEmpty() ? (
                   <Button
                     type="button"
                     variant="outline"
@@ -367,14 +351,15 @@ export default function ProfilePage() {
                   >
                     Add New
                   </Button>
+                ) : (
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => handleAction('avatar', 'update')}
                   >
-                    {getButtonLabel('avatar')}
+                    Update
                   </Button>
-                </>
+                )
               )}
             </div>
           </CardHeader>
@@ -433,7 +418,7 @@ export default function ProfilePage() {
             <CardTitle>Personal Information</CardTitle>
             <div className="flex gap-2">
               {!editingSection && !isAdding && (
-                <>
+                isPersonalInfoEmpty() ? (
                   <Button
                     type="button"
                     variant="outline"
@@ -442,10 +427,15 @@ export default function ProfilePage() {
                   >
                     Add New
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => handleAction('personal', 'update')}>
-                    {getButtonLabel('personal')}
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => handleAction('personal', 'update')}
+                  >
+                    Update
                   </Button>
-                </>
+                )
               )}
             </div>
           </CardHeader>
@@ -476,6 +466,16 @@ export default function ProfilePage() {
                   value={profileData.phone}
                   onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                   placeholder="Enter your phone number"
+                  disabled={editingSection !== 'personal' && isAdding !== 'personal'}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Date of Birth</label>
+                <Input
+                  type="date"
+                  value={profileData.dateOfBirth}
+                  onChange={(e) => setProfileData({ ...profileData, dateOfBirth: e.target.value })}
+                  placeholder="Select your date of birth"
                   disabled={editingSection !== 'personal' && isAdding !== 'personal'}
                 />
               </div>
@@ -517,7 +517,7 @@ export default function ProfilePage() {
             </CardTitle>
             <div className="flex gap-2">
               {!editingSection && !isAdding && (
-                <>
+                isBankInfoEmpty() ? (
                   <Button
                     type="button"
                     variant="outline"
@@ -526,10 +526,15 @@ export default function ProfilePage() {
                   >
                     Add New
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => handleAction('bank', 'update')}>
-                    {getButtonLabel('bank')}
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => handleAction('bank', 'update')}
+                  >
+                    Update
                   </Button>
-                </>
+                )
               )}
             </div>
           </CardHeader>
@@ -637,7 +642,7 @@ export default function ProfilePage() {
             <CardTitle>Identification Documents</CardTitle>
             <div className="flex gap-2">
               {!editingSection && !isAdding && (
-                <>
+                isDocumentsEmpty() ? (
                   <Button
                     type="button"
                     variant="outline"
@@ -646,18 +651,42 @@ export default function ProfilePage() {
                   >
                     Add New
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => handleAction('documents', 'update')}>
-                    {getButtonLabel('documents')}
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => handleAction('documents', 'update')}
+                  >
+                    Update
                   </Button>
-                </>
+                )
               )}
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Choose ID Type</label>
+                <Select
+                  value={profileData.idType}
+                  onValueChange={(value: "passport" | "citizenship" | "driving-license") =>
+                    setProfileData({ ...profileData, idType: value, frontImage: null })}
+                  disabled={editingSection !== 'documents' && isAdding !== 'documents'}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select ID type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="passport">Passport</SelectItem>
+                    <SelectItem value="citizenship">Citizenship</SelectItem>
+                    <SelectItem value="driving-license">Driving License</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-destructive" />
-                <p className="text-sm text-destructive">PAN Card is required</p>
+                <p className="text-sm text-destructive">Tax Card is required</p>
               </div>
               <label className={`block ${(editingSection !== 'documents' && isAdding !== 'documents') ? 'pointer-events-none' : 'cursor-pointer'}`}>
                 <input
@@ -693,32 +722,14 @@ export default function ProfilePage() {
                   ) : (
                     <div className="flex flex-col items-center justify-center h-48 bg-muted rounded hover:bg-muted/80 transition-colors">
                       <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                      <span className="text-primary hover:underline">Upload PAN Card</span>
+                      <span className="text-primary hover:underline">Upload Tax Card</span>
                     </div>
                   )}
                 </div>
               </label>
             </div>
 
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Additional ID Type (Required)</label>
-                <Select
-                  value={profileData.idType}
-                  onValueChange={(value: "passport" | "citizenship" | "driving-license") =>
-                    setProfileData({ ...profileData, idType: value, frontImage: null })}
-                  disabled={editingSection !== 'documents' && isAdding !== 'documents'}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select ID type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="passport">Passport</SelectItem>
-                    <SelectItem value="citizenship">Citizenship</SelectItem>
-                    <SelectItem value="driving-license">Driving License</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            
 
               {profileData.idType && (
                 <label className={`block ${(editingSection !== 'documents' && isAdding !== 'documents') ? 'pointer-events-none' : 'cursor-pointer'}`}>

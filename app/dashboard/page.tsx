@@ -331,7 +331,7 @@ export default function Dashboard() {
             <BarChart2 className="h-5 w-5" />
             Working Hours
           </CardTitle>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-2">
             {user?.role?.name === 'Admin' && (
               <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
                 <SelectTrigger className="w-[200px]">

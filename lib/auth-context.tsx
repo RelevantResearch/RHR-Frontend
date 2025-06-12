@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { User, Role } from "@/lib/types";
 import { login_api } from "@/api/auth";
 import { updateUserProfile } from "@/api/user";
+import { useLoading } from '@/lib/loading-context';
 import {
   getFromLocalStorage,
   removeFromLocalStorage,
@@ -26,9 +27,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const { showLoading, hideLoading } = useLoading();
 
   useEffect(() => {
     const checkAuth = async () => {
+      // showLoading("Checking Authentication...");
       try {
         const storedUser = getFromLocalStorage("user");
         const accessToken = getFromLocalStorage("accessToken");
@@ -52,6 +55,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAccessToken(null);
       } finally {
         setIsLoading(false);
+        // hideLoading();
+
       }
     };
 
@@ -59,6 +64,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
+    showLoading("Taking you in...");
+    await new Promise(resolve => setTimeout(resolve, 1500));
     setIsLoading(true);
     try {
       const { user, accessToken } = await login_api(email, password);
@@ -68,18 +75,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAccessToken(accessToken);
     } finally {
       setIsLoading(false);
+      hideLoading();
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    showLoading('Signing you out...');
     setIsLoading(true);
     try {
+      await new Promise(resolve => setTimeout(resolve, 2000));
       removeFromLocalStorage("user");
       removeFromLocalStorage("accessToken");
       setUser(null);
       setAccessToken(null);
     } finally {
       setIsLoading(false);
+      hideLoading(); 
     }
   };
 
@@ -99,13 +110,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     throw new Error("User is not authenticated.");
   };
 
-  if (isLoading) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-75 z-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
 
   return (
     <AuthContext.Provider

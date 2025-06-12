@@ -15,6 +15,7 @@ export interface User {
   avatar?: string | null;
   joinDate?: string;
   phone?: string;
+  dateOfBirth?: string;
   country?: string;
   state?: string;
   city?: string;
