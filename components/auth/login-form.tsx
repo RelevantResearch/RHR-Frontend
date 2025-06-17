@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { useLoading } from '@/lib/loading-context'; 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
@@ -16,34 +17,44 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { loginValidator } from "@/validator/login.validator"
+import { LoadingOverlay } from '../ui/loading-overlay';
 
 export default function LoginForm() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false);
+
     const [showForgotPassword, setShowForgotPassword] = useState(false);
     const [resetEmail, setResetEmail] = useState('');
     const { login } = useAuth();
     const router = useRouter();
+    const { showLoading, hideLoading } = useLoading(); 
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       const { error } = loginValidator.validate({ email, password });
 
       if (error) {
-        // Convert Joi errors to a user-friendly message
         const messages = error.details.map((d) => d.message).join(", ");
-        toast.error(messages); // or show messages individually
+        toast.error(messages);
         return;
       }
 
+      showLoading("Logging you in...");
+
       try {
-        const login_info = await login(email, password);
+        await login(email, password);
         toast.success("Login successful");
         router.push("/dashboard");
       } catch (error) {
         toast.error("Login failed");
+      } finally {
+        // setLoading(false);
+        hideLoading();
       }
     };
+
+    
 
   const handleSendVerificationCode = () => {
     if (!resetEmail) {
@@ -133,6 +144,7 @@ export default function LoginForm() {
           </div>
         </DialogContent>
       </Dialog>
+      <LoadingOverlay isVisible={loading} message="Taking you in...."/>
     </div>
   );
 }

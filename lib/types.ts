@@ -18,6 +18,7 @@ export interface User {
   dateOfBirth?: string;
   country?: string;
   state?: string;
+  status?: boolean;
   city?: string;
   address?: string;
   idType?: 'passport' | 'citizenship' | 'driving-license';
@@ -82,7 +83,7 @@ export interface Employee extends User {
   position: string;
   joinDate: string;
   reportsTo?: string;
-  status: 'active' | 'inactive';
+  employeeStatus: 'active' | 'inactive';
 }
 
 export interface LeaveRequest {

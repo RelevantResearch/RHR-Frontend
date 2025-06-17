@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useProjects } from "@/hooks/useProjects";
 import { Textarea } from "@/components/ui/textarea";
 import { FolderKanban, Plus, Calendar, Users, Clock, Eye, Trash2, Archive, ChevronLeft, ChevronRight, Search, Check, X } from "lucide-react";
 import {
@@ -100,7 +101,8 @@ const mockEmployees = [
 
 export default function ProjectsPage() {
   const { user } = useAuth();
-  const [projects, setProjects] = useState<Project[]>(demoProjects);
+  // const [projects, setProjects] = useState<Project[]>(demoProjects);
+  const { projects, loading, error, archiveProject, deleteProject, addProject, refetch } = useProjects();
   const [newProject, setNewProject] = useState({
     name: '',
     description: '',
@@ -108,7 +110,7 @@ export default function ProjectsPage() {
     budget: '',
     department: 'Web Development',
     startDate: '',
-    endDate: '',
+    endDate: '',  // <-- use endDate here
     assignedEmployees: [] as string[],
   });
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -127,44 +129,53 @@ export default function ProjectsPage() {
        emp.role.toLowerCase().includes(employeeSearch.toLowerCase()))
     );
 
-  const handleAddProject = () => {
-    if (!newProject.name || !newProject.description || !newProject.clientName || !newProject.budget || !newProject.startDate || !newProject.endDate) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    const project: Project = {
-      id: Date.now().toString(),
-      ...newProject,
-      budget: parseFloat(newProject.budget),
-      status: 'active',
+    const handleAddProject = () => {
+      if (
+        !newProject.name ||
+        !newProject.description ||
+        !newProject.clientName ||
+        !newProject.budget ||
+        !newProject.startDate ||
+        !newProject.endDate  // check endDate, not deadline
+      ) {
+        toast.error("Please fill in all required fields");
+        return;
+      }
+  
+      addProject({
+        name: newProject.name,
+        description: newProject.description,
+        clientName: newProject.clientName,
+        budget: parseFloat(newProject.budget),
+        department: newProject.department,
+        startDate: newProject.startDate,
+        endDate: newProject.endDate,
+        assignedEmployees: newProject.assignedEmployees,
+      });
+  
+      setNewProject({
+        name: '',
+        description: '',
+        clientName: '',
+        budget: '',
+        department: 'Web Development',
+        startDate: '',
+        endDate: '',
+        assignedEmployees: [],
+      });
     };
 
-    setProjects([...projects, project]);
-    setNewProject({
-      name: '',
-      description: '',
-      clientName: '',
-      budget: '',
-      department: 'Web Development',
-      startDate: '',
-      endDate: '',
-      assignedEmployees: [],
-    });
-    toast.success('Project added successfully');
-  };
-
   const handleDeleteProject = (id: string) => {
-    setProjects(projects.filter(p => p.id !== id));
+    deleteProject(id); // ✅ use the function from useProjects
     toast.success('Project deleted successfully');
   };
 
+
   const handleArchiveProject = (id: string) => {
-    setProjects(projects.map(p => 
-      p.id === id ? { ...p, status: 'archived' } : p
-    ));
+    archiveProject(id); // ✅ use the function from useProjects
     toast.success('Project archived successfully');
   };
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
