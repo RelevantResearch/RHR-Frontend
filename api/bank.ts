@@ -47,8 +47,8 @@ interface BankDetailsPayload {
   acNumber: string;
   tax: string;
   userId: string;
-  branch: string;
-  additionalInformation: string;
+  branch?: string;
+  additionalInformation?: string;
 }
 
 // Create Bank Details API
@@ -64,7 +64,7 @@ export const createBankDetails = async (bankDetails: BankDetailsPayload) => {
 export const getBankDetails = async (userId: number) => {
   try {
     const response = await axiosInstance.get(`/bankDetails/${userId}`);
-    // console.log("API raw response:", response.data);  // Add this line
+    // console.log("API raw response:", response.data);  
     if (response.data && response.data.data !== null) {
       return response.data.data;
     }

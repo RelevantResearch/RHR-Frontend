@@ -1,3 +1,4 @@
+
 // @/hooks/useEmployees.ts
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -6,6 +7,7 @@ import { getBankDetails } from "@/api/bank";
 
 const DEFAULT_AVATAR =
   "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=256&h=256&fit=crop&crop=faces";
+
 const DEFAULT_DOCUMENTS = {
   panCard: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2064&auto=format&fit=crop",
   idType: "passport",
@@ -38,26 +40,34 @@ export const useEmployees = () => {
               avatar: DEFAULT_AVATAR,
               documents: DEFAULT_DOCUMENTS,
               position: emp.document || "",
+              role: emp.role?.name || "Employee",
+              employmentType: emp.fullTimer ? "full-time" : "part-time",
+              status: emp.isDeleted ? "inactive" : "active",
               bankDetails: bankDetails
                 ? {
-                    accountHolder: bankDetails.acName || "",
-                    accountNumber: bankDetails.acNumber || "",
-                    bankName: bankDetails.name || "",
-                    panId: bankDetails.tax || "",
-                    bankAddress: bankDetails.address || "",
-                  }
+                  accountHolder: bankDetails.acName || "",
+                  accountNumber: bankDetails.acNumber || "",
+                  bankName: bankDetails.name || "",
+                  panId: bankDetails.tax || "",
+                  bankAddress: bankDetails.address || "",
+                }
                 : {
-                    accountHolder: "",
-                    accountNumber: "",
-                    bankName: "",
-                    panId: "",
-                    bankAddress: "",
-                  },
+                  accountHolder: "",
+                  accountNumber: "",
+                  bankName: "",
+                  panId: "",
+                  bankAddress: "",
+                },
             };
           })
         );
 
-        setEmployees(enriched);
+        // ✅ Sort: Active (isDeleted: false) at the top
+        const sortedEmployees = enriched.sort(
+          (a, b) => Number(a.isDeleted) - Number(b.isDeleted)
+        );
+
+        setEmployees(sortedEmployees);
       } catch (err) {
         toast.error("Failed to load employees");
       } finally {

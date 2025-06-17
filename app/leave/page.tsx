@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calendar, Clock, FileText } from 'lucide-react';
+import { useLeaveTypes } from '@/hooks/useLeaveTypes';
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,7 @@ import { LeaveRequest } from '@/lib/types';
 
 export default function LeavePage() {
   const { user } = useAuth();
+  const { leaveTypes, loading } = useLeaveTypes();
   const { addLeaveRequest, getLeaveRequestsForUser, calculateLeaveBalance } = useLeaveStore();
   const [newLeave, setNewLeave] = useState({
     type: 'annual',
@@ -141,10 +143,20 @@ export default function LeavePage() {
                     <SelectValue placeholder="Select leave type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="annual">Annual Leave</SelectItem>
-                    <SelectItem value="personal">Personal Leave</SelectItem>
+                    {loading ? (
+                      <SelectItem disabled value="">
+                        Loading...
+                      </SelectItem>
+                    ) : (
+                      leaveTypes.map((type) => (
+                        <SelectItem key={type.id} value={type.name.toLowerCase()}>
+                          {type.name} Leave
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
+
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">

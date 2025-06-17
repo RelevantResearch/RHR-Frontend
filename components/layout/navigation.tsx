@@ -41,13 +41,15 @@ import {
 } from '@/components/ui/popover';
 import { format } from 'date-fns';
 import PasswordChange from '@/components/auth/password-change';
+import LoadingOverlayWrapper from '@/components/loading-overlay-wrapper'; 
 
 interface NavigationProps {
   children: React.ReactNode;
 }
 
 export default function Navigation({ children }: NavigationProps) {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotificationStore();
   const pathname = usePathname();
   const router = useRouter();
@@ -72,12 +74,29 @@ export default function Navigation({ children }: NavigationProps) {
     return <>{children}</>;
   }
 
+  // Show loader while auth is loading
+  if (isLoading || !user?.role?.name) {
+    return <LoadingOverlayWrapper />;
+  }
+
+  // If not logged in, redirect to login page or show a login message/component
+  if (!user) {
+    router.push('/');
+    return null;
+  }
+
+  // **NEW: Wait until user.role.name is loaded before rendering navigation**
+  if (!user || !user.role || !user.role.name) {
+    return <LoadingOverlayWrapper />;
+  }
+
+
   const handleLogout = async () => {
     await logout();
     router.push('/');
   };
 
-  const roleName = user?.role?.name?.toLowerCase() || "";
+  const roleName = user.role.name.toLowerCase();
 
 
   const adminLinks = [
@@ -87,7 +106,7 @@ export default function Navigation({ children }: NavigationProps) {
       icon: LayoutDashboard,
     },
     {
-      href: '/employees',
+      href: '/admin/employees',
       label: 'Employees',
       icon: Users,
     },
@@ -166,7 +185,10 @@ export default function Navigation({ children }: NavigationProps) {
     // },
   ];
 
+  // console.log("Role Name:", roleName);
+
   const links = roleName === "admin" ? adminLinks : employeeLinks;
+
 
   const NavLinks = () => (
     <>

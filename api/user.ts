@@ -3,7 +3,8 @@ import axiosInstance from "./axios";
 export const getMyInfo = async () => {
   try {
     const response = await axiosInstance.get("/user/me");
-    return response.data; 
+    // Return the nested user object
+    return response.data.user;
   } catch (error) {
     console.error("Failed to fetch my info", error);
     return null;
@@ -56,5 +57,15 @@ export const getAllEmployees = async () => {
   } catch (error) {
     console.error("Failed to fetch employee list from /user/admin/all", error);
     throw error;
+  }
+};
+
+
+// Delete users
+export const deleteUserApi = async (id: number | string) => {
+  try {
+    await axiosInstance.delete(`/user/admin/${id}`);
+  } catch (error) {
+    throw new Error("Failed to delete user");
   }
 };

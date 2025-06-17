@@ -1,7 +1,7 @@
 'use client';
 
-
-import { createUserApi } from '@/api/user';
+import { useRoles } from '@/hooks/useRoles';
+import { createUserApi, deleteUserApi } from '@/api/user';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { TicketIcon, Plus, Search, Filter, Eye, Trash2, Mail, Phone, Building2, Calendar, Download } from "lucide-react";
+import { TicketIcon, Plus, Search, Filter, Eye, Trash2, Mail, Phone, Building2, Calendar, Download, ChevronLeft, ChevronRight, Edit } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -48,6 +48,7 @@ import {
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const departments = [
   "Web Development",
@@ -56,34 +57,6 @@ const departments = [
 ];
 
 
-const sampleEmployees = [
-  {
-    id: '1',
-    name: 'John Smith',
-    email: 'john.smith@company.com',
-    phone: '+1 (555) 123-4567',
-    department: 'Web Development',
-    position: 'Senior Developer',
-    joinDate: '2023-01-15',
-    status: 'active',
-    employmentType: 'full-time',
-    role: 'admin',
-    address: '123 Tech Street, Suite 100, San Francisco, California',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=256&h=256&fit=crop&crop=faces',
-    documents: {
-      panCard: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2064&auto=format&fit=crop',
-      idType: 'passport',
-      idDocument: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2064&auto=format&fit=crop'
-    },
-    bankDetails: {
-      accountHolder: 'John Smith',
-      accountNumber: '1234 1234 1234',
-      bankName: 'National Bank',
-      panId: 'ABCDE1234F',
-      bankAddress: '123 Banking Street, Finance District'
-    }
-  }
-];
 
 const emptyEmployeeForm = {
   name: '',
@@ -106,14 +79,21 @@ const emptyEmployeeForm = {
 };
 
 export default function EmployeesPage() {
+  const { user } = useAuth();
+  const { roles } = useRoles();
   const { employees: fetchedEmployees, loading } = useEmployees();
   const [employees, setEmployees] = useState<any[]>([]);
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [editingEmployee, setEditingEmployee] = useState<any>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [newEmployee, setNewEmployee] = useState<typeof emptyEmployeeForm>(emptyEmployeeForm);
   const [showEmployeeForm, setShowEmployeeForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  
 
   useEffect(() => {
     if (!loading && fetchedEmployees.length > 0) {
@@ -126,7 +106,7 @@ export default function EmployeesPage() {
       toast.error('Please fill in all required fields');
       return;
     }
-  
+
     // Build payload only with fields you want to send now
     const payload = {
       name: newEmployee.name,
@@ -139,34 +119,194 @@ export default function EmployeesPage() {
       document: 'test docs',
       salary: 250,
     };
-  
+
     console.log('Payload:', payload);
-  
+
     try {
       await createUserApi(payload);
       toast.success('User created successfully');
-      setShowEmployeeForm(false); 
+      setShowEmployeeForm(false);
       setNewEmployee(emptyEmployeeForm);
     } catch (err) {
       toast.error((err as Error).message);
     }
   };
-  
-  
 
-  const handleDeleteEmployee = (id: number | string) => {
-    setEmployees(prev => prev.filter(emp => emp.id !== id));
-    toast.success("Employee deleted successfully");
+  const handleEditEmployee = () => {
+    if (!editingEmployee.name || !editingEmployee.email || !editingEmployee.phone) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const updatedEmployees = employees.map(emp =>
+      emp.id === editingEmployee.id ? editingEmployee : emp
+    );
+    setEmployees(updatedEmployees);
+    setShowEditForm(false);
+    setEditingEmployee(null);
+    toast.success('Employee updated successfully');
+  };
+
+  const handleDeleteEmployee = async (id: number | string) => {
+    const userToDelete = employees.find((emp) => emp.id === id);
+
+    if (!userToDelete) {
+      console.warn(`User with ID ${id} not found in local state.`);
+      toast.error("Employee not found.");
+      return;
+    }
+
+    console.log(
+      `%c[DEBUG] Attempting to delete user`,
+      "color: orange; font-weight: bold;",
+      {
+        id: userToDelete.id,
+        name: userToDelete.name,
+        email: userToDelete.email,
+      }
+    );
+
+    try {
+      await deleteUserApi(id); // Call backend API
+      setEmployees((prev) => prev.filter((emp) => emp.id !== id)); // Update frontend
+      toast.success(`Deleted employee: ${userToDelete.name}`);
+    } catch (err) {
+      console.error(
+        `[ERROR] Failed to delete user with ID ${id}:`,
+        (err as Error).message
+      );
+      toast.error("Failed to delete employee.");
+    }
   };
 
   const filteredEmployees = employees.filter(employee => {
-    const matchesDepartment = selectedDepartment === 'all' || employee.department === selectedDepartment;
-    const matchesSearch = 
+    const matchesDepartment =
+      selectedDepartment === 'all' || employee.department === selectedDepartment;
+
+    const matchesSearch =
       employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       employee.department.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesDepartment && matchesSearch;
-  });
+
+    const matchesStatus =
+      selectedStatus === 'all' ||
+      (selectedStatus === 'active' && !employee.isDeleted) ||
+      (selectedStatus === 'inactive' && employee.isDeleted);
+
+    return matchesDepartment && matchesSearch && matchesStatus;
+  })
+    .sort((a, b) => Number(a.isDeleted) - Number(b.isDeleted));
+
+
+
+  // Pagination logic
+  const employeesPerPage = 10;
+  const totalPages = Math.ceil(filteredEmployees.length / employeesPerPage);
+  const startIndex = (currentPage - 1) * employeesPerPage;
+  const endIndex = startIndex + employeesPerPage;
+  const currentEmployees = filteredEmployees.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  const handleFilterChange = (filterType: string, value: string) => {
+    setCurrentPage(1);
+    if (filterType === 'search') {
+      setSearchTerm(value);
+    } else if (filterType === 'department') {
+      setSelectedDepartment(value);
+    }
+  };
+
+  const renderPagination = () => {
+    if (filteredEmployees.length === 0) return null;
+    if (totalPages <= 1) {
+      return (
+        <div className="mt-4 text-sm text-muted-foreground text-center">
+          Showing all {filteredEmployees.length} employees
+        </div>
+      );
+    }
+
+
+    const getVisiblePages = () => {
+      const delta = 2;
+      const range = [];
+      const rangeWithDots = [];
+
+      for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
+        range.push(i);
+      }
+
+      if (currentPage - delta > 2) {
+        rangeWithDots.push(1, '...');
+      } else {
+        rangeWithDots.push(1);
+      }
+
+      rangeWithDots.push(...range);
+
+      if (currentPage + delta < totalPages - 1) {
+        rangeWithDots.push('...', totalPages);
+      } else {
+        rangeWithDots.push(totalPages);
+      }
+
+      return rangeWithDots;
+    };
+
+    return (
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
+        <div className="text-sm text-muted-foreground order-2 sm:order-1">
+          Showing {startIndex + 1} to {Math.min(endIndex, filteredEmployees.length)} of {filteredEmployees.length} employees
+        </div>
+        <div className="flex items-center gap-1 order-1 sm:order-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            className="h-8 w-8 p-0 sm:w-auto sm:px-3"
+          >
+            <ChevronLeft className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Previous</span>
+          </Button>
+
+          <div className="hidden sm:flex items-center gap-1">
+            {getVisiblePages().map((page, index) => (
+              <Button
+                key={index}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => typeof page === 'number' && setCurrentPage(page)}
+                disabled={typeof page !== 'number'}
+                className="h-8 w-8 p-0"
+              >
+                {page}
+              </Button>
+            ))}
+          </div>
+
+          {/* Mobile pagination info */}
+          <div className="sm:hidden flex items-center px-3 py-1 text-sm bg-muted rounded">
+            {currentPage} / {totalPages}
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+            className="h-8 w-8 p-0 sm:w-auto sm:px-3"
+          >
+            <span className="hidden sm:inline">Next</span>
+            <ChevronRight className="h-4 w-4 sm:ml-2" />
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+
+
 
   return (
     <div className="p-2 md:p-6 space-y-6">
@@ -182,9 +322,11 @@ export default function EmployeesPage() {
         </Button>
       </div>
 
+      {/* Add Employee Dialog */}
       <Dialog open={showEmployeeForm} onOpenChange={setShowEmployeeForm}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogTitle>{isEditing ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Full Name</label>
@@ -250,18 +392,21 @@ export default function EmployeesPage() {
               <label className="text-sm font-medium">Role</label>
               <Select
                 value={newEmployee.role}
-                onValueChange={(value: 'admin' | 'employee') => 
-                  setNewEmployee({ ...newEmployee, role: value })}
+                onValueChange={(value) => setNewEmployee({ ...newEmployee, role: value as 'admin' | 'employee' })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="employee">Employee</SelectItem>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.name}>
+                      {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Join Date</label>
               <Input
@@ -274,7 +419,7 @@ export default function EmployeesPage() {
               <label className="text-sm font-medium">Employment Type</label>
               <Select
                 value={newEmployee.employmentType}
-                onValueChange={(value: 'full-time' | 'part-time') => 
+                onValueChange={(value: 'full-time' | 'part-time') =>
                   setNewEmployee({ ...newEmployee, employmentType: value })}
               >
                 <SelectTrigger>
@@ -310,6 +455,135 @@ export default function EmployeesPage() {
         </DialogContent>
       </Dialog>
 
+
+
+      {/* Edit Employee Dialog - Restricted Fields */}
+      <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogTitle>Edit Employee</DialogTitle>
+          <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-medium text-blue-900 mb-2">Employee Information (Read-only)</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-blue-700 font-medium">Name:</span>
+                  <span className="ml-2 text-blue-800">{editingEmployee?.name}</span>
+                </div>
+                <div>
+                  <span className="text-blue-700 font-medium">Email:</span>
+                  <span className="ml-2 text-blue-800">{editingEmployee?.email}</span>
+                </div>
+                <div>
+                  <span className="text-blue-700 font-medium">Phone:</span>
+                  <span className="ml-2 text-blue-800">{editingEmployee?.phone}</span>
+                </div>
+                <div>
+                  <span className="text-blue-700 font-medium">Join Date:</span>
+                  <span className="ml-2 text-blue-800">
+                    {editingEmployee?.joinDate ? format(new Date(editingEmployee.joinDate), 'MMM dd, yyyy') : 'N/A'}
+                  </span>
+                </div>
+                <div className="md:col-span-2">
+                  <span className="text-blue-700 font-medium">Address:</span>
+                  <span className="ml-2 text-blue-800">{editingEmployee?.address}</span>
+                </div>
+              </div>
+            </div>
+
+            {editingEmployee && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Department</label>
+                  <Select
+                    value={editingEmployee.department}
+                    onValueChange={(value) => setEditingEmployee({ ...editingEmployee, department: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map((dept) => (
+                        <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Position</label>
+                  <Input
+                    placeholder="Enter position"
+                    value={editingEmployee.position}
+                    onChange={(e) => setEditingEmployee({ ...editingEmployee, position: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Role</label>
+                  <Select
+                    value={editingEmployee?.role}
+                    onValueChange={(value: string) => setEditingEmployee({ ...editingEmployee, role: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roles.map((role) => (
+                        <SelectItem key={role.id} value={role.name}>
+                          {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Employment Type</label>
+                  <Select
+                    value={editingEmployee.employmentType}
+                    onValueChange={(value: 'full-time' | 'part-time') =>
+                      setEditingEmployee({ ...editingEmployee, employmentType: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select employment type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="full-time">Full Time</SelectItem>
+                      <SelectItem value="part-time">Part Time</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Status</label>
+                  <Select
+                    value={editingEmployee.status}
+                    onValueChange={(value: 'active' | 'inactive') =>
+                      setEditingEmployee({ ...editingEmployee, status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="mt-6 flex justify-end gap-4">
+            <Button type="button" variant="outline" onClick={() => {
+              setShowEditForm(false);
+              setEditingEmployee(null);
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditEmployee}>
+              Update Employee
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Card>
         <CardHeader>
           <CardTitle>Employee List</CardTitle>
@@ -337,6 +611,25 @@ export default function EmployeesPage() {
                   ))}
                 </SelectContent>
               </Select>
+              <Select
+                value={selectedStatus}
+                onValueChange={(value) => {
+                  if (value === "active" || value === "all" || value === "inactive") {
+                    setSelectedStatus(value);
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+
+
             </div>
 
             <div className="overflow-x-auto rounded-md border">
@@ -347,11 +640,12 @@ export default function EmployeesPage() {
                     <TableHead className="hidden md:table-cell">Department</TableHead>
                     <TableHead className="hidden md:table-cell">Position</TableHead>
                     <TableHead className="hidden md:table-cell">Join Date</TableHead>
+                    <TableHead className="hidden md:table-cell">Status</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredEmployees.map((employee) => (
+                  {currentEmployees.map((employee) => (
                     <TableRow key={employee.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -369,6 +663,18 @@ export default function EmployeesPage() {
                       <TableCell className="hidden md:table-cell">{employee.department}</TableCell>
                       <TableCell className="hidden md:table-cell">{employee.position}</TableCell>
                       <TableCell className="hidden md:table-cell">{format(new Date(employee.joinDate), 'MMM dd, yyyy')}</TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <span
+                          className={cn(
+                            "inline-flex px-2 py-1 text-xs font-medium rounded-full",
+                            employee.isDeleted
+                              ? "bg-red-100 text-red-800"
+                              : "bg-green-100 text-green-800"
+                          )}
+                        >
+                          {employee.isDeleted ? "Inactive" : "Active"}
+                        </span>
+                      </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Dialog>
@@ -382,12 +688,12 @@ export default function EmployeesPage() {
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 <div className="space-y-6">
                                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                                  <Avatar className="h-20 w-20">
-                                    {employee.avatar && (
-                                      <AvatarImage src={employee.avatar} alt={employee.name} />
-                                    )}
-                                    <AvatarFallback>{employee.name.substring(0, 2)}</AvatarFallback>
-                                  </Avatar>
+                                    <Avatar className="h-20 w-20">
+                                      {employee.avatar && (
+                                        <AvatarImage src={employee.avatar} alt={employee.name} />
+                                      )}
+                                      <AvatarFallback>{employee.name.substring(0, 2)}</AvatarFallback>
+                                    </Avatar>
 
                                     <div>
                                       <h3 className="text-xl font-semibold">{employee.name}</h3>
@@ -487,8 +793,23 @@ export default function EmployeesPage() {
                               </div>
                             </DialogContent>
                           </Dialog>
+
+
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => {
+                              setEditingEmployee({ ...employee });
+                              setShowEditForm(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
+
                               <Button variant="ghost" size="icon">
                                 <Trash2 className="h-4 w-4 text-red-500" />
                               </Button>
@@ -515,9 +836,18 @@ export default function EmployeesPage() {
                       </TableCell>
                     </TableRow>
                   ))}
+
+                  {currentEmployees.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground h-24">
+                        No employees found
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
+            {renderPagination()}
           </div>
         </CardContent>
       </Card>

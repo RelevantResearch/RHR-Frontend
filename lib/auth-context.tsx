@@ -29,43 +29,74 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const { showLoading, hideLoading } = useLoading();
 
+  // useEffect(() => {
+  //   const checkAuth = async () => {
+  //     // showLoading("Checking Authentication...");
+  //     try {
+  //       const storedUser = getFromLocalStorage("user");
+  //       const accessToken = getFromLocalStorage("accessToken");
+
+  //       if (accessToken) {
+  //         // If there's an access token, verify it by fetching user info
+  //         const userInfo = await getMyInfo();
+  //         setUser(userInfo);
+  //         setToLocalStorage("user", userInfo);
+  //         setAccessToken(accessToken);
+  //       } else if (storedUser) {
+  //         // Fallback to stored user if no token (optional)
+  //         setUser(storedUser);
+  //       }
+  //     } catch (error) {
+  //       console.error("Authentication check failed:", error);
+  //       // Clear invalid credentials
+  //       removeFromLocalStorage("user");
+  //       removeFromLocalStorage("accessToken");
+  //       setUser(null);
+  //       setAccessToken(null);
+  //     } finally {
+  //       setIsLoading(false);
+  //       // hideLoading();
+
+  //     }
+  //   };
+
+  //   checkAuth();
+  // }, []);
+
   useEffect(() => {
     const checkAuth = async () => {
-      // showLoading("Checking Authentication...");
       try {
-        const storedUser = getFromLocalStorage("user");
         const accessToken = getFromLocalStorage("accessToken");
-
-        if (accessToken) {
-          // If there's an access token, verify it by fetching user info
-          const userInfo = await getMyInfo();
-          setUser(userInfo);
-          setToLocalStorage("user", userInfo);
-          setAccessToken(accessToken);
-        } else if (storedUser) {
-          // Fallback to stored user if no token (optional)
-          setUser(storedUser);
+        if (!accessToken) {
+          setIsLoading(false);
+          return;
         }
+
+        const userInfo = await getMyInfo();
+        if (!userInfo || !userInfo.role) {
+          throw new Error("Invalid user data");
+        }
+
+        setUser(userInfo);
+        setAccessToken(accessToken);
+        setToLocalStorage("user", userInfo);
       } catch (error) {
-        console.error("Authentication check failed:", error);
-        // Clear invalid credentials
+        console.error("Auth check failed:", error);
         removeFromLocalStorage("user");
         removeFromLocalStorage("accessToken");
         setUser(null);
         setAccessToken(null);
       } finally {
         setIsLoading(false);
-        // hideLoading();
-
       }
     };
 
     checkAuth();
   }, []);
-
+  
   const login = async (email: string, password: string) => {
     showLoading("Taking you in...");
-    await new Promise(resolve => setTimeout(resolve, 2500));
+    await new Promise(resolve => setTimeout(resolve, 1500));
     setIsLoading(true);
     try {
       const { user, accessToken } = await login_api(email, password);
@@ -83,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     showLoading('Signing you out...');
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 2500));
+      await new Promise(resolve => setTimeout(resolve, 1500));
       removeFromLocalStorage("user");
       removeFromLocalStorage("accessToken");
       setUser(null);

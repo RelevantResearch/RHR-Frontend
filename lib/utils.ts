@@ -28,15 +28,35 @@ export const setToLocalStorage = (key: string, value: any) => {
 
 
 // Get data from localStorage
+// export const getFromLocalStorage = (key: string) => {
+//   try {
+//     const value = localStorage.getItem(key);
+//     return value ? JSON.parse(value) : null;
+//   } catch (err) {
+//     console.error("Error getting localStorage", err);
+//     return null;
+//   }
+// };
 export const getFromLocalStorage = (key: string) => {
   try {
     const value = localStorage.getItem(key);
-    return value ? JSON.parse(value) : null;
+
+    if (!value) return null;
+
+    try {
+      // Try parsing as JSON
+      return JSON.parse(value);
+    } catch {
+      // If it's not JSON, return the raw string (like JWT)
+      return value;
+    }
+
   } catch (err) {
     console.error("Error getting localStorage", err);
     return null;
   }
 };
+
 
 // Optional: Remove item
 export const removeFromLocalStorage = (key: string) => {
