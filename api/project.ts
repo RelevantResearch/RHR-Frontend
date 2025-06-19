@@ -21,6 +21,11 @@ interface ProjectFromDB {
     assignedEmployees: string[];
   }
   
+type APIResponse = {
+  message: string;
+  data: ProjectFromDB[];
+};
+
 
 //Create a new project 
 export const createProject = async (data: CreateProjectPayload) => {
@@ -37,11 +42,11 @@ export const createProject = async (data: CreateProjectPayload) => {
 
 // Fetch all projects from the backend
 export const getAllProjects = async (): Promise<ProjectFromDB[]> => {
-    try {
-      const response = await axios.get("/project/all");
-      return response.data.data;
-    } catch (error: any) {
-      console.error("API getAllProjects error:", error);
-      throw new Error(error?.response?.data?.message || "Failed to fetch projects");
-    }
-  };
+  try {
+    const response = await axios.get("/project/all");
+    return response.data.data; // ✅ This is okay if your function returns only `ProjectFromDB[]`
+  } catch (error: any) {
+    console.error("API getAllProjects error:", error);
+    throw new Error(error?.response?.data?.message || "Failed to fetch projects");
+  }
+};

@@ -101,7 +101,6 @@ const mockEmployees = [
 
 export default function ProjectsPage() {
   const { user } = useAuth();
-  // const [projects, setProjects] = useState<Project[]>(demoProjects);
   const { projects, loading, error, archiveProject, deleteProject, addProject, refetch } = useProjects();
   const [newProject, setNewProject] = useState({
     name: '',
