@@ -1,15 +1,27 @@
 import axiosInstance from "./axios";
 
+// Fetch currently logged-in user's info (no ID required)
 export const getMyInfo = async () => {
   try {
     const response = await axiosInstance.get("/user/me");
-    // Return the nested user object
     return response.data.user;
   } catch (error) {
     console.error("Failed to fetch my info", error);
     return null;
   }
 };
+
+// Fetch any user by ID (admin use case)
+export const getUserById = async (id: number) => {
+  try {
+    const response = await axiosInstance.get(`/user/admin/${id}`);
+    return response.data.user;
+  } catch (error) {
+    console.error(`Failed to fetch user with ID ${id}`, error);
+    return null;
+  }
+};
+
 
 interface CreateUserParams {
   name: string;

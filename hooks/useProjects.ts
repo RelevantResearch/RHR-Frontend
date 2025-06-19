@@ -39,8 +39,11 @@ export const useProjects = () => {
     setLoading(true);
     setError(null);
     try {
-      const dbProjects = await getAllProjects(); // ✅ Correct usage
-  
+      const dbProjects = await getAllProjects();
+
+      // 👇 Log full API response to debug
+      console.log("Raw API response for projects:", dbProjects);
+
       const mappedProjects: FrontendProject[] = dbProjects.map((p, idx) => ({
         id: p.id || String(idx + 1),
         name: p.name,
@@ -53,16 +56,20 @@ export const useProjects = () => {
         status: p.status || "active",
         assignedEmployees: p.assignedEmployees || [],
       }));
-  
+
+      console.log("Mapped frontend projects:", mappedProjects); // 👈 Optional
+
       setProjects(mappedProjects);
     } catch (err: any) {
       setError(err.message);
       toast.error("Failed to load projects");
+      console.error("Error while fetching and mapping projects:", err);
     } finally {
       setLoading(false);
     }
   };
-  
+
+
 
 
 

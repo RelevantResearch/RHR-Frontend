@@ -39,7 +39,7 @@ export const useEmployees = () => {
               department: "Web Development", // Static fallback
               avatar: DEFAULT_AVATAR,
               documents: DEFAULT_DOCUMENTS,
-              position: emp.document || "",
+              position: emp.position || "",
               role: emp.role?.name || "Employee",
               employmentType: emp.fullTimer ? "full-time" : "part-time",
               status: emp.isDeleted ? "inactive" : "active",

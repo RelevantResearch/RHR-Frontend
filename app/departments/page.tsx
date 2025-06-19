@@ -14,75 +14,79 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
-interface Department {
-  id: string;
-  name: string;
-  description: string;
-  type: 'Web Development' | 'Data Analysis' | 'Public Impact';
-  employeeCount: number;
-}
+
+import { useDepartments, Department } from "@/hooks/useDepartments";
+
+
 
 export default function DepartmentsPage() {
-  const [departments, setDepartments] = useState<Department[]>([
-    {
-      id: '1',
-      name: 'Web Development',
-      description: 'Frontend and backend development services',
-      type: 'Web Development',
-      employeeCount: 0
-    },
-    {
-      id: '2',
-      name: 'Data Analysis',
-      description: 'Data processing and analytics services',
-      type: 'Data Analysis',
-      employeeCount: 0
-    },
-    {
-      id: '3',
-      name: 'Public Impact',
-      description: 'Public relations and social impact initiatives',
-      type: 'Public Impact',
-      employeeCount: 0
-    }
-  ]);
+  const { departments, loading, error, setDepartments, addDepartment, deleteDepartment } = useDepartments();
+
+  // State to track the department selected for deletion
+  const [departmentToDelete, setDepartmentToDelete] = useState<null | { id: string; name: string }>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
 
   const [newDepartment, setNewDepartment] = useState<{
     name: string;
     description: string;
-    type: 'Web Development' | 'Data Analysis' | 'Public Impact';
   }>({
     name: '',
     description: '',
-    type: 'Web Development'
   });
 
+  const handleDeleteClick = (dept: { id: string; name: string }) => {
+    setDepartmentToDelete(dept);
+    setIsDeleteDialogOpen(true);
+  };
 
-  const handleAddDepartment = () => {
+  const confirmDelete = async () => {
+    if (!departmentToDelete) return;
+
+    try {
+      await deleteDepartment(departmentToDelete.id);
+      toast.success(`Department "${departmentToDelete.name}" deleted successfully`);
+    } catch (error) {
+      toast.error("Failed to delete department");
+    }
+
+    setIsDeleteDialogOpen(false);
+    setDepartmentToDelete(null);
+  };
+
+  const cancelDelete = () => {
+    setIsDeleteDialogOpen(false);
+    setDepartmentToDelete(null);
+  };
+
+  const handleAddDepartment = async () => {
     if (!newDepartment.name || !newDepartment.description) {
-      toast.error('Please fill in all fields');
+      toast.error("Please fill in all fields");
       return;
     }
 
-    const department: Department = {
-      id: Date.now().toString(),
-      ...newDepartment,
-      employeeCount: 0
-    };
+    try {
+      await addDepartment(newDepartment.name, newDepartment.description);
 
-    setDepartments([...departments, department]);
-    setNewDepartment({
-      name: '',
-      description: '',
-      type: 'Web Development'
-    });
-    toast.success('Department added successfully');
+      setNewDepartment({
+        name: "",
+        description: "",
+      });
+
+      toast.success("Department added successfully");
+    } catch (error) {
+      toast.error("Failed to create department");
+    }
   };
+
 
   const handleDeleteDepartment = (id: string) => {
-    setDepartments(departments.filter(dept => dept.id !== id));
-    toast.success('Department deleted successfully');
+    setDepartments(departments.filter((dept) => dept.id !== id));
+    toast.success("Department deleted successfully");
   };
+
+  if (loading) return <p>Loading departments...</p>;
+  if (error) return <p className="text-red-500">Error: {error}</p>;
 
   return (
     <div className="container mx-auto py-8">
@@ -90,7 +94,9 @@ export default function DepartmentsPage() {
         <Building2 className="h-8 w-8 text-primary" />
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Departments</h1>
-          <p className="text-muted-foreground">Manage company departments and services</p>
+          <p className="text-muted-foreground">
+            Manage company departments and services
+          </p>
         </div>
       </div>
 
@@ -147,7 +153,9 @@ export default function DepartmentsPage() {
                 <Input
                   placeholder="Enter department name"
                   value={newDepartment.name}
-                  onChange={(e) => setNewDepartment({ ...newDepartment, name: e.target.value })}
+                  onChange={(e) =>
+                    setNewDepartment({ ...newDepartment, name: e.target.value })
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -155,23 +163,13 @@ export default function DepartmentsPage() {
                 <Input
                   placeholder="Enter department description"
                   value={newDepartment.description}
-                  onChange={(e) => setNewDepartment({ ...newDepartment, description: e.target.value })}
+                  onChange={(e) =>
+                    setNewDepartment({
+                      ...newDepartment,
+                      description: e.target.value,
+                    })
+                  }
                 />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Service Type</label>
-                <select
-                  className="w-full rounded-md border border-input bg-background px-3 py-2"
-                  value={newDepartment.type}
-                  onChange={(e) => setNewDepartment({ 
-                    ...newDepartment, 
-                    type: e.target.value as 'Web Development' | 'Data Analysis' | 'Public Impact'
-                  })}
-                >
-                  <option value="Web Development">Web Development</option>
-                  <option value="Data Analysis">Data Analysis</option>
-                  <option value="Public Impact">Public Impact</option>
-                </select>
               </div>
               <Button className="w-full" onClick={handleAddDepartment}>
                 Add Department
@@ -188,13 +186,13 @@ export default function DepartmentsPage() {
               <div className="flex justify-between items-start">
                 <CardTitle>{department.name}</CardTitle>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="icon">
+                  {/* <Button variant="ghost" size="icon">
                     <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
+                  </Button> */}
+                  <Button
+                    variant="ghost"
                     size="icon"
-                    onClick={() => handleDeleteDepartment(department.id)}
+                    onClick={() => handleDeleteClick(department)}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
@@ -202,10 +200,12 @@ export default function DepartmentsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">{department.description}</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                {department.description}
+              </p>
               <div className="flex justify-between items-center text-sm">
                 <span className="bg-primary/10 text-primary px-2 py-1 rounded">
-                  {department.type}
+                  {department.name}
                 </span>
                 <span>{department.employeeCount} employees</span>
               </div>
@@ -213,6 +213,24 @@ export default function DepartmentsPage() {
           </Card>
         ))}
       </div>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+          </DialogHeader>
+          <p>Do you want to delete the department "{departmentToDelete?.name}"?</p>
+          <div className="mt-6 flex justify-end gap-2">
+            <Button variant="outline" onClick={cancelDelete}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

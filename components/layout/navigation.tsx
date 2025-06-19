@@ -125,6 +125,11 @@ export default function Navigation({ children }: NavigationProps) {
       label: 'Leave Management',
       icon: Calendar,
     },
+    {
+      href: '/departments',
+      label: 'Department',
+      icon: Building2,
+    },
     // {
     //   href: '/calendar',
     //   label: 'Calendar',
