@@ -1,7 +1,7 @@
 'use client';
 
 
-import { createBankDetails, getBankDetails } from "@/api/bank";
+import { createBankDetails, getBankDetails, updateBankDetails } from "@/api/bank";
 import { useEffect } from "react";
 import { useState, useRef } from "react";
 import { useAuth } from "@/lib/auth-context";
@@ -18,7 +18,7 @@ import {
 import { toast } from "sonner";
 import { User, Upload, Camera, AlertCircle, Building2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
+import { useDepartments } from "@/hooks/useDepartments";
 
 interface BankDetailsPayload {
   name: string;
@@ -36,7 +36,7 @@ interface ProfileData {
   email: string;
   phone: string;
   address: string;
-  dateOfBirth: string;
+  DOB: string;
   idType: "passport" | "citizenship" | "driving-license" | "";
   frontImage: string | null;
   panCardImage: string | null;
@@ -51,6 +51,7 @@ interface ProfileData {
 }
 
 export default function ProfilePage() {
+  const { departments, loading: loadingDepartments } = useDepartments();
   const { user, updateProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -58,11 +59,11 @@ export default function ProfilePage() {
     email: user?.email || "",
     phone: user?.phone || "",
     address: user?.address || "",
-    dateOfBirth: user?.dateOfBirth || "",
+    DOB: user?.DOB || "",
     idType: user?.idType || "",
     frontImage: user?.frontImage || null,
     panCardImage: user?.panCardImage || null,
-    avatar: user?.avatar || null,
+    avatar: user?.profilePic || null,
     bankDetails: user?.bankDetails || {
       accountNumber: "",
       bankName: "",
@@ -73,7 +74,7 @@ export default function ProfilePage() {
     },
   });
   const isPersonalInfoEmpty = () => {
-    return !profileData.name && !profileData.email && !profileData.phone && !profileData.address && !profileData.dateOfBirth;
+    return !profileData.name && !profileData.email && !profileData.phone && !profileData.address && !profileData.DOB;
   };
 
   const isBankInfoEmpty = () => {
@@ -101,7 +102,7 @@ export default function ProfilePage() {
         idType: user.idType || "",
         frontImage: user.frontImage || null,
         panCardImage: user.panCardImage || null,
-        avatar: user.avatar || null,
+        avatar: user.profilePic || null,
       }));
 
 
@@ -191,6 +192,26 @@ export default function ProfilePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+
+    if (editingSection === 'avatar' || isAdding === 'avatar') {
+      try {
+        if (!profileData.avatar) {
+          toast.error("No profile picture selected");
+          return;
+        }
+
+        // Here profileData.avatar must be a URL string, not base64
+        await updateProfile({ profilePic: profileData.avatar });
+
+        toast.success("Profile picture updated successfully");
+        setEditingSection(null);
+        setIsAdding(null);
+      } catch (error) {
+        toast.error("Failed to update profile picture");
+      }
+      return;
+    }
+
     // Validate based on which section is being edited/added
     if (editingSection === 'personal' || isAdding === 'personal') {
       if (!profileData.name || !profileData.email || !profileData.phone || !profileData.address) {
@@ -234,12 +255,40 @@ export default function ProfilePage() {
         }
 
         return;
+
+        
+      } else if (editingSection === 'bank') {
+        if (!user?.id) {
+          toast.error("User ID is missing. Cannot update bank details.");
+          return;
+        }
+      
+        const payload: BankDetailsPayload = {
+          name: profileData.bankDetails.bankName,
+          address: profileData.bankDetails.bankAddress,
+          acName: profileData.bankDetails.accountHolderName,
+          acNumber: profileData.bankDetails.accountNumber,
+          tax: profileData.bankDetails.panId,
+          userId: user.id,
+          branch: "Nothing",
+          additionalInformation: "Nothing"
+        };
+      
+        try {
+          await updateBankDetails(Number(user.id), payload);
+          toast.success("Bank details updated successfully");
+          setEditingSection(null);
+          setIsAdding(null);
+        } catch (err: any) {
+          toast.error(err.message || "Failed to update bank details");
+        }
+        return;
       }
     }
 
 
     if (editingSection === 'personal' || isAdding === 'personal') {
-      if (!profileData.name || !profileData.email || !profileData.phone || !profileData.address || !profileData.dateOfBirth) {
+      if (!profileData.name || !profileData.email || !profileData.phone || !profileData.address || !profileData.DOB) {
         toast.error("Please fill in all required personal information");
         return;
       }
@@ -280,7 +329,7 @@ export default function ProfilePage() {
   const handleAction = (section: 'personal' | 'bank' | 'documents' | 'avatar', action: 'add' | 'update') => {
     if (action === 'add') {
       // Check if data already exists
-      if (section === 'personal' && (profileData.name || profileData.email || profileData.phone || profileData.address || profileData.dateOfBirth)) {
+      if (section === 'personal' && (profileData.name || profileData.email || profileData.phone || profileData.address || profileData.DOB)) {
         toast.error("Personal information already exists. Click Update to modify.");
         return;
       }
@@ -300,7 +349,7 @@ export default function ProfilePage() {
       setEditingSection(null);
     } else {
       // Check if data exists before allowing update
-      if (section === 'personal' && (!profileData.name && !profileData.email && !profileData.phone && !profileData.address && !profileData.dateOfBirth)) {
+      if (section === 'personal' && (!profileData.name && !profileData.email && !profileData.phone && !profileData.address && !profileData.DOB)) {
         toast.error("No personal information exists. Please add new information first.");
         return;
       }
@@ -473,8 +522,8 @@ export default function ProfilePage() {
                 <label className="text-sm font-medium">Date of Birth</label>
                 <Input
                   type="date"
-                  value={profileData.dateOfBirth}
-                  onChange={(e) => setProfileData({ ...profileData, dateOfBirth: e.target.value })}
+                  value={profileData.DOB}
+                  onChange={(e) => setProfileData({ ...profileData, DOB: e.target.value })}
                   placeholder="Select your date of birth"
                   disabled={editingSection !== 'personal' && isAdding !== 'personal'}
                 />
@@ -502,7 +551,7 @@ export default function ProfilePage() {
                   Cancel
                 </Button>
                 <Button type="submit">
-                  {isAdding === 'personal' ? 'Save Updates' : 'Save New Updates'}
+                  {isAdding === 'personal' ? 'Add Updates' : 'Save Updates'}
                 </Button>
               </div>
             )}
@@ -683,53 +732,53 @@ export default function ProfilePage() {
                   </SelectContent>
                 </Select>
               </div>
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-destructive" />
-                <p className="text-sm text-destructive">Tax Card is required</p>
-              </div>
-              <label className={`block ${(editingSection !== 'documents' && isAdding !== 'documents') ? 'pointer-events-none' : 'cursor-pointer'}`}>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleImageUpload("pan")}
-                  disabled={editingSection !== 'documents' && isAdding !== 'documents'}
-                />
-                <div className="border rounded-lg p-4">
-                  {profileData.panCardImage ? (
-                    <div className="relative">
-                      <img
-                        src={profileData.panCardImage}
-                        alt="PAN Card"
-                        className="w-full h-48 object-cover rounded"
-                      />
-                      {(editingSection === 'documents' || isAdding === 'documents') && (
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          className="absolute top-2 right-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setProfileData({ ...profileData, panCardImage: null });
-                          }}
-                        >
-                          Remove
-                        </Button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-48 bg-muted rounded hover:bg-muted/80 transition-colors">
-                      <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                      <span className="text-primary hover:underline">Upload Tax Card</span>
-                    </div>
-                  )}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-destructive" />
+                  <p className="text-sm text-destructive">Tax Card is required</p>
                 </div>
-              </label>
-            </div>
+                <label className={`block ${(editingSection !== 'documents' && isAdding !== 'documents') ? 'pointer-events-none' : 'cursor-pointer'}`}>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleImageUpload("pan")}
+                    disabled={editingSection !== 'documents' && isAdding !== 'documents'}
+                  />
+                  <div className="border rounded-lg p-4">
+                    {profileData.panCardImage ? (
+                      <div className="relative">
+                        <img
+                          src={profileData.panCardImage}
+                          alt="PAN Card"
+                          className="w-full h-48 object-cover rounded"
+                        />
+                        {(editingSection === 'documents' || isAdding === 'documents') && (
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-2 right-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setProfileData({ ...profileData, panCardImage: null });
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-48 bg-muted rounded hover:bg-muted/80 transition-colors">
+                        <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                        <span className="text-primary hover:underline">Upload Tax Card</span>
+                      </div>
+                    )}
+                  </div>
+                </label>
+              </div>
 
-            
+
 
               {profileData.idType && (
                 <label className={`block ${(editingSection !== 'documents' && isAdding !== 'documents') ? 'pointer-events-none' : 'cursor-pointer'}`}>

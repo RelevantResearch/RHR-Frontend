@@ -15,44 +15,71 @@ export function cn(...inputs: ClassValue[]) {
 //   } catch (err) {
 //     console.error("Error setting localStorage", err);
 //   }
+// // };
+// export const setToLocalStorage = (key: string, value: any) => {
+//   try {
+//     const serializedValue =
+//       typeof value === "string" ? value : JSON.stringify(value);
+//     localStorage.setItem(key, serializedValue);
+//   } catch (err) {
+//     console.error("Error setting localStorage", err);
+//   }
 // };
+
+
+// // Get data from localStorage
+// export const getFromLocalStorage = (key: string) => {
+//   try {
+//     const value = localStorage.getItem(key);
+//     return value ? JSON.parse(value) : null;
+//   } catch (err) {
+//     console.error("Error getting localStorage", err);
+//     return null;
+//   }
+// };
+
+// // Optional: Remove item
+// export const removeFromLocalStorage = (key: string) => {
+//   try {
+//     localStorage.removeItem(key);
+//   } catch (err) {
+//     console.error("Error removing from localStorage", err);
+//   }
+// };
+// utils.ts or utils/localStorage.ts
+
 export const setToLocalStorage = (key: string, value: any) => {
   try {
     const serializedValue =
       typeof value === "string" ? value : JSON.stringify(value);
     localStorage.setItem(key, serializedValue);
   } catch (err) {
-    console.error("Error setting localStorage", err);
+    console.error("Error setting localStorage:", err);
   }
 };
 
 export const getFromLocalStorage = (key: string) => {
   try {
     const value = localStorage.getItem(key);
-    // console.log("value:", value)
-
     if (!value) return null;
 
-    try {
-      // Try parsing as JSON
+    // Only parse if value is likely JSON
+    if (value.startsWith("{") || value.startsWith("[")) {
       return JSON.parse(value);
-    } catch {
-      // If it's not JSON, return the raw string (like JWT)
-      return value;
     }
 
+    // Return raw string (like token)
+    return value;
   } catch (err) {
-    console.error("Error getting localStorage", err);
+    console.error("Error getting localStorage:", err);
     return null;
   }
 };
 
-
-// Optional: Remove item
 export const removeFromLocalStorage = (key: string) => {
   try {
-    localStorage.removeItem('user');
+    localStorage.removeItem(key);
   } catch (err) {
-    console.error("Error removing from localStorage", err);
+    console.error("Error removing from localStorage:", err);
   }
 };

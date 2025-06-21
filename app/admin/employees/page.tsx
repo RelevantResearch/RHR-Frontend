@@ -50,6 +50,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
+import { useDepartments } from "@/hooks/useDepartments"; // adjust path if needed
+
+
 const departments = [
   "Web Development",
   "Data Analytics",
@@ -79,6 +82,7 @@ const emptyEmployeeForm = {
 };
 
 export default function EmployeesPage() {
+  const { departments, loading: loadingDepartments } = useDepartments();
   const { user } = useAuth();
   const { roles } = useRoles();
   const { employees: fetchedEmployees, loading } = useEmployees();
@@ -93,7 +97,7 @@ export default function EmployeesPage() {
   const [showEmployeeForm, setShowEmployeeForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  
+
 
   useEffect(() => {
     if (!loading && fetchedEmployees.length > 0) {
@@ -362,7 +366,7 @@ export default function EmployeesPage() {
                 onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
               />
             </div>
-            {/* TODO: Implement department logic later
+            {/* TODO: Implement department logic later */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Department</label>
               <Select
@@ -373,13 +377,20 @@ export default function EmployeesPage() {
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                  ))}
+                  {loadingDepartments ? (
+                    <SelectItem disabled value="">Loading...</SelectItem>
+                  ) : (
+                    departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.name}>
+                        {dept.name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
-            */}
+
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Position</label>
               <Input
@@ -503,9 +514,12 @@ export default function EmployeesPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {departments.map((dept) => (
-                        <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                        <SelectItem key={dept.id} value={dept.name}>
+                          {dept.name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
+
                   </Select>
                 </div>
                 <div className="space-y-2">
@@ -605,11 +619,13 @@ export default function EmployeesPage() {
                   <SelectValue placeholder="Filter by department" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Departments</SelectItem>
                   {departments.map((dept) => (
-                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    <SelectItem key={dept.id} value={dept.name}>
+                      {dept.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
+
               </Select>
               <Select
                 value={selectedStatus}

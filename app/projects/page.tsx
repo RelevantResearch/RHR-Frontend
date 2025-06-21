@@ -1,5 +1,6 @@
 "use client";
 
+import { useDepartments } from "@/hooks/useDepartments"; // adjust path if needed
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -120,6 +121,8 @@ export default function ProjectsPage() {
   const [employeeSearch, setEmployeeSearch] = useState('');
   const [employeePopoverOpen, setEmployeePopoverOpen] = useState(false);
   const [selectedDepartmentFilter, setSelectedDepartmentFilter] = useState<string | null>(null);
+  const { departments, loading: loadingDepartments } = useDepartments();
+
 
   const filteredEmployees = mockEmployees
     .filter(emp => 
@@ -264,7 +267,9 @@ export default function ProjectsPage() {
             <SelectContent>
               <SelectItem value="all">All Departments</SelectItem>
               {departments.map(dept => (
-                <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                <SelectItem key={dept.id} value={dept.name}>
+                {dept.name}
+              </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -321,7 +326,9 @@ export default function ProjectsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {departments.map((dept) => (
-                          <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                          <SelectItem key={dept.id} value={dept.name}>
+                          {dept.name}
+                        </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -412,7 +419,9 @@ export default function ProjectsPage() {
                                 <SelectContent>
                                   <SelectItem value="all">All Departments</SelectItem>
                                   {departments.map((dept) => (
-                                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                                    <SelectItem key={dept.id} value={dept.name}>
+                                    {dept.name}
+                                  </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
