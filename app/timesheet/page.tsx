@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CalendarDays, Clock, Plus, Download, ChevronDown, ChevronRight, BadgeCheck, Clock4 } from "lucide-react";
-import { format, differenceInMinutes, parseISO, isWithinInterval, startOfMonth, endOfMonth, addDays, subMonths, isSameDay } from 'date-fns';
+import { CalendarDays, Plus, Download, ChevronDown, ChevronRight, BadgeCheck, Clock4 } from "lucide-react";
+import { format, differenceInMinutes, isWithinInterval, startOfMonth, endOfMonth, subMonths, isSameDay } from 'date-fns';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth-context';
 import { useTimeSheetStore } from '@/lib/timesheet-store';
@@ -18,18 +18,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// Available projects for the dropdown
+
 const projects = [
   'Website Redesign',
   'Mobile App Development',
   'Database Migration',
-  'API Integration',
-  'UI/UX Improvements',
-  'Performance Optimization',
-  'Security Updates',
-  'Documentation',
-  'Testing & QA',
-  'Client Support'
 ];
 
 export default function TimesheetPage() {

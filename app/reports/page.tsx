@@ -5,8 +5,6 @@ import { useAuth } from '@/lib/auth-context';
 import { useNotificationStore } from '@/lib/notification-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { FileText } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -59,72 +57,6 @@ const demoReports: WeeklyReport[] = [
     objectivesCompleted: 'Optimized database queries and implemented caching layer. Reduced API response time by 40%.',
     supportNeeded: '',
     nextWeekPlans: 'Implement real-time notifications and improve error handling.'
-  },
-  {
-    id: '3',
-    date: new Date().toISOString(),
-    employeeId: '2',
-    employeeName: 'Jane Employee',
-    department: 'Data Analysis',
-    issuesEncountered: 'Data inconsistencies in legacy system export.',
-    objectivesCompleted: 'Successfully migrated historical data and created new analysis models. Implemented automated data validation checks.',
-    supportNeeded: 'Additional storage capacity for data warehouse.',
-    nextWeekPlans: 'Begin implementing real-time analytics dashboard and set up monitoring alerts.'
-  },
-  {
-    id: '4',
-    date: subMonths(new Date(), 1).toISOString(),
-    employeeId: '2',
-    employeeName: 'Jane Employee',
-    department: 'Data Analysis',
-    issuesEncountered: 'Integration issues with third-party analytics tools.',
-    objectivesCompleted: 'Set up new data pipeline and implemented automated reporting system.',
-    supportNeeded: 'Need access to advanced analytics tools.',
-    nextWeekPlans: 'Create custom dashboards for different departments.'
-  },
-  {
-    id: '5',
-    date: new Date().toISOString(),
-    employeeId: '3',
-    employeeName: 'Mike Johnson',
-    department: 'Public Impact',
-    issuesEncountered: '',
-    objectivesCompleted: 'Launched community outreach program and completed stakeholder interviews. Organized successful virtual town hall meeting.',
-    supportNeeded: '',
-    nextWeekPlans: 'Prepare presentation for quarterly review and start new initiative planning.'
-  },
-  {
-    id: '6',
-    date: subWeeks(new Date(), 2).toISOString(),
-    employeeId: '3',
-    employeeName: 'Mike Johnson',
-    department: 'Public Impact',
-    issuesEncountered: 'Schedule conflicts with key stakeholders.',
-    objectivesCompleted: 'Completed impact assessment report and presented findings to board.',
-    supportNeeded: 'Additional budget for community events.',
-    nextWeekPlans: 'Develop new engagement strategies and plan upcoming events.'
-  },
-  {
-    id: '7',
-    date: subMonths(new Date(), 2).toISOString(),
-    employeeId: '1',
-    employeeName: 'John Admin',
-    department: 'Web Development',
-    issuesEncountered: 'Technical debt in legacy codebase.',
-    objectivesCompleted: 'Completed major refactoring sprint and updated documentation.',
-    supportNeeded: 'Need additional development resources.',
-    nextWeekPlans: 'Start implementing new feature requests and continue code optimization.'
-  },
-  {
-    id: '8',
-    date: subWeeks(new Date(), 3).toISOString(),
-    employeeId: '2',
-    employeeName: 'Jane Employee',
-    department: 'Data Analysis',
-    issuesEncountered: 'Data quality issues in source systems.',
-    objectivesCompleted: 'Implemented data quality checks and created comprehensive data dictionary.',
-    supportNeeded: 'Need specialized training for new tools.',
-    nextWeekPlans: 'Begin machine learning model development and data visualization improvements.'
   }
 ];
 

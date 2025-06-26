@@ -62,6 +62,11 @@ const calendarEvents = [
 
 
 export default function Dashboard() {
+
+  useEffect(() => {
+    throw new Error("Simulated runtime error");
+  }, []);
+  
   const { user } = useAuth();
   const { getEntriesForUser, getAllEntries, addTimeEntry } = useTimeSheetStore();
   const { calculateLeaveBalance } = useLeaveStore();
