@@ -27,7 +27,7 @@ export const getBankDetails = async (userId: number) => {
   try {
     const response = await axiosInstance.get(`/bankDetails/${userId}`);
     // console.log("API raw response haii:", response); 
-    console.log("API raw response:", response.data);  
+    // console.log("API raw response:", response.data);  
 
     if (response.data && response.data.data !== null) {
       return response.data.data;

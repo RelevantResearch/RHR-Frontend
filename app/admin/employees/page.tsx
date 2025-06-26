@@ -5,11 +5,11 @@ import { createUserApi, deleteUserApi } from '@/api/user';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { useTicketStore } from '@/lib/ticket-store';
+// import { useTicketStore } from '@/lib/ticket-store';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+// import { Textarea } from "@/components/ui/textarea";
 import { TicketIcon, Plus, Search, Filter, Eye, Trash2, Mail, Phone, Building2, Calendar, Download, ChevronLeft, ChevronRight, Edit } from "lucide-react";
 import {
   Dialog,
@@ -313,7 +313,7 @@ export default function EmployeesPage() {
 
 
   return (
-    <div className="p-2 md:p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl md:text-3xl font-bold">Employees</h1>
         <Button onClick={() => {
@@ -599,10 +599,7 @@ export default function EmployeesPage() {
       </Dialog>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Employee List</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1 w-full sm:max-w-sm">

@@ -34,8 +34,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const storedToken = getFromLocalStorage("accessToken") as string | null;
         const storedUser = getFromLocalStorage("user") as User | null;
 
-        // console.log("[Auth] Token:", storedToken);
-        // console.log("[Auth] User:", storedUser);
+        console.log("[Auth] Token:", storedToken);
+        console.log("[Auth] User:", storedUser);
 
         if (!storedToken || !storedUser || !storedUser.role) {
           console.log("[Auth] Missing token or role. Logging out.");

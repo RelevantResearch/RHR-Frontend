@@ -361,16 +361,10 @@ export default function ReportsPage() {
     <div className="container mx-auto py-8">
       <div className="mb-8">
         <div className="flex items-center gap-4">
-          <FileText className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
               {user?.role?.name === 'Admin' ? 'Reports & Analytics' : 'Weekly Reports'}
             </h1>
-            <p className="text-muted-foreground mt-2">
-              {user?.role?.name === 'Admin' 
-                ? 'View and manage employee reports' 
-                : 'Submit and track your weekly progress reports'}
-            </p>
           </div>
         </div>
       </div>

@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Shield, Plus, Edit, Trash2, Users, Key, Settings, Search, Eye, X } from "lucide-react";
+import { Shield, Plus, Edit, Trash2, Users, Search, Eye} from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -39,7 +39,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -48,7 +48,7 @@ import { useRBACStore, Role, Permission } from "@/lib/rbac-store";
 import { useAuth } from "@/lib/auth-context";
 import { format } from "date-fns";
 
-// Mock employees data - in a real app, this would come from your employee store
+
 const mockEmployees = [
     {
         id: '1',
@@ -109,12 +109,6 @@ export default function RBACPage() {
         addRole,
         updateRole,
         deleteRole,
-        addPermission,
-        updatePermission,
-        deletePermission,
-        addPriorityLevel,
-        updatePriorityLevel,
-        deletePriorityLevel,
     } = useRBACStore();
 
     const [searchTerm, setSearchTerm] = useState("");
@@ -132,32 +126,12 @@ export default function RBACPage() {
     const [roleForm, setRoleForm] = useState({
         name: "",
         description: "",
-        priority: 1,
-        priorityLabel: "",
         permissions: [] as string[],
         assignedEmployees: [] as string[],
         isActive: true,
     });
     const [editingRole, setEditingRole] = useState<Role | null>(null);
     const [showRoleDialog, setShowRoleDialog] = useState(false);
-
-    // Permission form state
-    const [permissionForm, setPermissionForm] = useState({
-        name: "",
-        description: "",
-        resource: "",
-        action: "",
-    });
-    const [editingPermission, setEditingPermission] = useState<Permission | null>(null);
-    const [showPermissionDialog, setShowPermissionDialog] = useState(false);
-
-    // Priority level form state
-    const [priorityForm, setPriorityForm] = useState({
-        value: 1,
-        label: "",
-    });
-    const [editingPriority, setEditingPriority] = useState<{ value: number; label: string } | null>(null);
-    const [showPriorityDialog, setShowPriorityDialog] = useState(false);
 
     const departments = Array.from(new Set(mockEmployees.map(emp => emp.department)));
 
@@ -167,25 +141,20 @@ export default function RBACPage() {
             return;
         }
 
-        const priorityLevel = priorityLevels.find(p => p.value === roleForm.priority);
-        const roleData = {
-            ...roleForm,
-            priorityLabel: priorityLevel?.label || `Level ${roleForm.priority}`,
-        };
+        const roleData = { ...roleForm };
+
 
         if (editingRole) {
             updateRole(editingRole.id, roleData);
             toast.success("Role updated successfully");
         } else {
-            addRole(roleData);
+            // addRole(roleData);
             toast.success("Role created successfully");
         }
 
         setRoleForm({
             name: "",
             description: "",
-            priority: 1,
-            priorityLabel: "",
             permissions: [],
             assignedEmployees: [],
             isActive: true,
@@ -194,59 +163,12 @@ export default function RBACPage() {
         setShowRoleDialog(false);
     };
 
-    const handlePermissionSubmit = () => {
-        if (!permissionForm.name || !permissionForm.resource || !permissionForm.action) {
-            toast.error("Please fill in all required fields");
-            return;
-        }
 
-        if (editingPermission) {
-            updatePermission(editingPermission.id, permissionForm);
-            toast.success("Permission updated successfully");
-        } else {
-            addPermission(permissionForm);
-            toast.success("Permission created successfully");
-        }
-
-        setPermissionForm({
-            name: "",
-            description: "",
-            resource: "",
-            action: "",
-        });
-        setEditingPermission(null);
-        setShowPermissionDialog(false);
-    };
-
-    const handlePrioritySubmit = () => {
-        if (!priorityForm.label || priorityForm.value < 1) {
-            toast.error("Please provide a valid priority level and label");
-            return;
-        }
-
-        if (editingPriority) {
-            updatePriorityLevel(editingPriority.value, priorityForm.label);
-            toast.success("Priority level updated successfully");
-        } else {
-            if (priorityLevels.some(p => p.value === priorityForm.value)) {
-                toast.error("Priority level already exists");
-                return;
-            }
-            addPriorityLevel(priorityForm.value, priorityForm.label);
-            toast.success("Priority level created successfully");
-        }
-
-        setPriorityForm({ value: 1, label: "" });
-        setEditingPriority(null);
-        setShowPriorityDialog(false);
-    };
 
     const handleEditRole = (role: Role) => {
         setRoleForm({
             name: role.name,
             description: role.description,
-            priority: role.priority,
-            priorityLabel: role.priorityLabel,
             permissions: role.permissions,
             assignedEmployees: (role as any).assignedEmployees || [],
             isActive: role.isActive,
@@ -255,25 +177,7 @@ export default function RBACPage() {
         setShowRoleDialog(true);
     };
 
-    const handleEditPermission = (permission: Permission) => {
-        setPermissionForm({
-            name: permission.name,
-            description: permission.description,
-            resource: permission.resource,
-            action: permission.action,
-        });
-        setEditingPermission(permission);
-        setShowPermissionDialog(true);
-    };
 
-    const handleEditPriority = (priority: { value: number; label: string }) => {
-        setPriorityForm({
-            value: priority.value,
-            label: priority.label,
-        });
-        setEditingPriority(priority);
-        setShowPriorityDialog(true);
-    };
 
     const handleAssignEmployees = (role: Role) => {
         setAssigningToRole(role);
@@ -314,11 +218,7 @@ export default function RBACPage() {
         role.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const filteredPermissions = permissions.filter(permission =>
-        permission.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        permission.resource.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        permission.action.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+
 
     const filteredEmployees = mockEmployees.filter(employee => {
         const matchesDepartment = selectedDepartment === "all" || employee.department === selectedDepartment;
@@ -340,63 +240,16 @@ export default function RBACPage() {
     const getEmployeeById = (id: string) => mockEmployees.find(emp => emp.id === id);
 
     return (
-        <div className="container mx-auto py-4 md:py-8 px-4">
+        <div className="container">
             <div className="flex items-center gap-4 mb-6 md:mb-8">
-                <Shield className="h-6 w-6 md:h-8 md:w-8 text-primary" />
                 <div>
                     <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Role-Based Access Control</h1>
-                    <p className="text-sm md:text-base text-muted-foreground">Manage roles, permissions, and access levels</p>
                 </div>
             </div>
 
-            <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-3 mb-6 md:mb-8">
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-base md:text-lg">Total Roles</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-2xl md:text-4xl font-bold">{roles.length}</p>
-                        <p className="text-xs md:text-sm text-muted-foreground">Active roles</p>
-                    </CardContent>
-                </Card>
 
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-base md:text-lg">Permissions</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-2xl md:text-4xl font-bold">{permissions.length}</p>
-                        <p className="text-xs md:text-sm text-muted-foreground">Available permissions</p>
-                    </CardContent>
-                </Card>
 
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-base md:text-lg">Priority Levels</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-2xl md:text-4xl font-bold">{priorityLevels.length}</p>
-                        <p className="text-xs md:text-sm text-muted-foreground">Defined levels</p>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="roles" className="flex items-center gap-2 text-xs md:text-sm">
-                        <Users className="h-3 w-3 md:h-4 md:w-4" />
-                        <span className="hidden sm:inline">Roles</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="permissions" className="flex items-center gap-2 text-xs md:text-sm">
-                        <Key className="h-3 w-3 md:h-4 md:w-4" />
-                        <span className="hidden sm:inline">Permissions</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="priorities" className="flex items-center gap-2 text-xs md:text-sm">
-                        <Settings className="h-3 w-3 md:h-4 md:w-4" />
-                        <span className="hidden sm:inline">Priority Levels</span>
-                    </TabsTrigger>
-                </TabsList>
-
+            <Tabs value="roles">
                 <TabsContent value="roles" className="space-y-4 md:space-y-6">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div className="relative w-full md:w-96">
@@ -414,8 +267,6 @@ export default function RBACPage() {
                                     setRoleForm({
                                         name: "",
                                         description: "",
-                                        priority: 1,
-                                        priorityLabel: "",
                                         permissions: [],
                                         assignedEmployees: [],
                                         isActive: true,
@@ -440,32 +291,7 @@ export default function RBACPage() {
                                                 onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value })}
                                             />
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">Priority Level</label>
-                                            <Select
-                                                value={roleForm.priority.toString()}
-                                                onValueChange={(value) => {
-                                                    const priority = parseInt(value);
-                                                    const priorityLevel = priorityLevels.find(p => p.value === priority);
-                                                    setRoleForm({
-                                                        ...roleForm,
-                                                        priority,
-                                                        priorityLabel: priorityLevel?.label || `Level ${priority}`,
-                                                    });
-                                                }}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select priority" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {priorityLevels.map((level) => (
-                                                        <SelectItem key={level.value} value={level.value.toString()}>
-                                                            {level.value} - {level.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
+
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium">Description</label>
@@ -597,7 +423,6 @@ export default function RBACPage() {
                                     <TableRow className="bg-muted/50">
                                         <TableHead className="min-w-[150px]">Role Name</TableHead>
                                         <TableHead className="hidden md:table-cell min-w-[200px]">Description</TableHead>
-                                        <TableHead className="hidden sm:table-cell">Priority</TableHead>
                                         <TableHead className="hidden xl:table-cell">Permissions</TableHead>
                                         <TableHead className="min-w-[200px]">Assigned Employees</TableHead>
                                         <TableHead className="hidden md:table-cell">Status</TableHead>
@@ -615,9 +440,7 @@ export default function RBACPage() {
                                                         <div className="md:hidden text-sm text-muted-foreground mt-1">
                                                             {role.description}
                                                         </div>
-                                                        <div className="sm:hidden text-xs text-muted-foreground mt-1">
-                                                            Priority: {role.priority} - {role.priorityLabel}
-                                                        </div>
+
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="hidden md:table-cell">
@@ -625,12 +448,7 @@ export default function RBACPage() {
                                                         {role.description}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="hidden sm:table-cell">
-                                                    <div className="text-sm">
-                                                        <div className="font-medium">{role.priority}</div>
-                                                        <div className="text-muted-foreground">{role.priorityLabel}</div>
-                                                    </div>
-                                                </TableCell>
+
                                                 <TableCell className="hidden xl:table-cell">
                                                     <div className="flex flex-wrap gap-1">
                                                         {role.permissions.slice(0, 2).map((permId) => {
@@ -660,14 +478,7 @@ export default function RBACPage() {
                                                                             <AvatarFallback className="text-xs">{employee.name.substring(0, 2)}</AvatarFallback>
                                                                         </Avatar>
                                                                         <span className="text-xs">{employee.name.split(' ')[0]}</span>
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="icon"
-                                                                            className="h-4 w-4 hover:bg-destructive hover:text-destructive-foreground"
-                                                                            onClick={() => removeEmployeeFromRole(role.id, empId)}
-                                                                        >
-                                                                            <X className="h-3 w-3" />
-                                                                        </Button>
+
                                                                     </div>
                                                                 ) : null;
                                                             })}
@@ -712,7 +523,6 @@ export default function RBACPage() {
                                                                                 <h4 className="font-medium mb-2">Basic Information</h4>
                                                                                 <div className="space-y-2 text-sm">
                                                                                     <div><span className="text-muted-foreground">Name:</span> {selectedRole.name}</div>
-                                                                                    <div><span className="text-muted-foreground">Priority:</span> {selectedRole.priority} - {selectedRole.priorityLabel}</div>
                                                                                     <div><span className="text-muted-foreground">Status:</span> {selectedRole.isActive ? "Active" : "Inactive"}</div>
                                                                                     <div><span className="text-muted-foreground">Created:</span> {format(new Date(selectedRole.createdAt), 'PPP')}</div>
                                                                                 </div>
@@ -743,6 +553,7 @@ export default function RBACPage() {
                                                                                 })}
                                                                             </div>
                                                                         </div>
+
 
                                                                         <div>
                                                                             <h4 className="font-medium mb-2">Permissions ({selectedRole.permissions.length})</h4>
@@ -811,316 +622,7 @@ export default function RBACPage() {
                     )}
                 </TabsContent>
 
-                <TabsContent value="permissions" className="space-y-4 md:space-y-6">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div className="relative w-full md:w-96">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search permissions..."
-                                className="pl-10"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                        <Dialog open={showPermissionDialog} onOpenChange={setShowPermissionDialog}>
-                            <DialogTrigger asChild>
-                                <Button onClick={() => {
-                                    setPermissionForm({
-                                        name: "",
-                                        description: "",
-                                        resource: "",
-                                        action: "",
-                                    });
-                                    setEditingPermission(null);
-                                }} className="w-full md:w-auto">
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Add Permission
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>{editingPermission ? "Edit Permission" : "Create New Permission"}</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium">Permission Name</label>
-                                        <Input
-                                            placeholder="Enter permission name"
-                                            value={permissionForm.name}
-                                            onChange={(e) => setPermissionForm({ ...permissionForm, name: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">Resource</label>
-                                            <Input
-                                                placeholder="e.g., users, projects"
-                                                value={permissionForm.resource}
-                                                onChange={(e) => setPermissionForm({ ...permissionForm, resource: e.target.value })}
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">Action</label>
-                                            <Input
-                                                placeholder="e.g., create, read, update"
-                                                value={permissionForm.action}
-                                                onChange={(e) => setPermissionForm({ ...permissionForm, action: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium">Description</label>
-                                        <Textarea
-                                            placeholder="Enter permission description"
-                                            value={permissionForm.description}
-                                            onChange={(e) => setPermissionForm({ ...permissionForm, description: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="flex justify-end gap-4">
-                                        <Button variant="outline" onClick={() => setShowPermissionDialog(false)}>
-                                            Cancel
-                                        </Button>
-                                        <Button onClick={handlePermissionSubmit}>
-                                            {editingPermission ? "Update Permission" : "Create Permission"}
-                                        </Button>
-                                    </div>
-                                </div>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
 
-                    {/* Permissions Table */}
-                    <div className="rounded-md border overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="bg-muted/50">
-                                        <TableHead className="min-w-[150px]">Permission Name</TableHead>
-                                        <TableHead className="hidden md:table-cell min-w-[200px]">Description</TableHead>
-                                        <TableHead className="hidden sm:table-cell">Resource</TableHead>
-                                        <TableHead className="hidden sm:table-cell">Action</TableHead>
-                                        <TableHead className="w-[100px]">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredPermissions.map((permission, index) => (
-                                        <TableRow key={permission.id} className={index % 2 === 0 ? "bg-background" : "bg-muted/20"}>
-                                            <TableCell className="font-medium">
-                                                <div>
-                                                    <div className="font-semibold">{permission.name}</div>
-                                                    <div className="md:hidden text-sm text-muted-foreground mt-1">
-                                                        {permission.description}
-                                                    </div>
-                                                    <div className="sm:hidden text-xs text-muted-foreground mt-1">
-                                                        {permission.resource} • {permission.action}
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="hidden md:table-cell">
-                                                <div className="max-w-[200px] truncate" title={permission.description}>
-                                                    {permission.description}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="hidden sm:table-cell">
-                                                <Badge variant="outline" className="capitalize">
-                                                    {permission.resource}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="hidden sm:table-cell">
-                                                <Badge variant="secondary" className="capitalize">
-                                                    {permission.action}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    <Dialog>
-                                                        <DialogTrigger asChild>
-                                                            <Button variant="ghost" size="icon" onClick={() => setSelectedPermission(permission)}>
-                                                                <Eye className="h-4 w-4" />
-                                                            </Button>
-                                                        </DialogTrigger>
-                                                        <DialogContent>
-                                                            <DialogHeader>
-                                                                <DialogTitle>Permission Details: {selectedPermission?.name}</DialogTitle>
-                                                            </DialogHeader>
-                                                            {selectedPermission && (
-                                                                <div className="space-y-4">
-                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                        <div>
-                                                                            <h4 className="font-medium mb-2">Basic Information</h4>
-                                                                            <div className="space-y-2 text-sm">
-                                                                                <div><span className="text-muted-foreground">Name:</span> {selectedPermission.name}</div>
-                                                                                <div><span className="text-muted-foreground">Resource:</span> {selectedPermission.resource}</div>
-                                                                                <div><span className="text-muted-foreground">Action:</span> {selectedPermission.action}</div>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div>
-                                                                            <h4 className="font-medium mb-2">Description</h4>
-                                                                            <p className="text-sm text-muted-foreground">{selectedPermission.description}</p>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </DialogContent>
-                                                    </Dialog>
-                                                    <Button variant="ghost" size="icon" onClick={() => handleEditPermission(permission)}>
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button variant="ghost" size="icon">
-                                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                                            </Button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Delete Permission</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    Are you sure you want to delete this permission? This will remove it from all roles.
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction
-                                                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                                                    onClick={() => {
-                                                                        deletePermission(permission.id);
-                                                                        toast.success("Permission deleted successfully");
-                                                                    }}
-                                                                >
-                                                                    Delete
-                                                                </AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </div>
-
-                    {filteredPermissions.length === 0 && (
-                        <div className="text-center py-8 text-muted-foreground">
-                            No permissions found.
-                        </div>
-                    )}
-                </TabsContent>
-
-                <TabsContent value="priorities" className="space-y-4 md:space-y-6">
-                    <div className="flex justify-between items-center">
-                        <h2 className="text-xl md:text-2xl font-semibold">Priority Levels</h2>
-                        <Dialog open={showPriorityDialog} onOpenChange={setShowPriorityDialog}>
-                            <DialogTrigger asChild>
-                                <Button onClick={() => {
-                                    setPriorityForm({ value: 1, label: "" });
-                                    setEditingPriority(null);
-                                }} className="w-full md:w-auto">
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Add Priority Level
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>{editingPriority ? "Edit Priority Level" : "Create New Priority Level"}</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">Priority Value</label>
-                                            <Input
-                                                type="number"
-                                                min="1"
-                                                max="100"
-                                                placeholder="Enter priority value"
-                                                value={priorityForm.value}
-                                                onChange={(e) => setPriorityForm({ ...priorityForm, value: parseInt(e.target.value) || 1 })}
-                                                disabled={!!editingPriority}
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">Priority Label</label>
-                                            <Input
-                                                placeholder="Enter priority label"
-                                                value={priorityForm.label}
-                                                onChange={(e) => setPriorityForm({ ...priorityForm, label: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-end gap-4">
-                                        <Button variant="outline" onClick={() => setShowPriorityDialog(false)}>
-                                            Cancel
-                                        </Button>
-                                        <Button onClick={handlePrioritySubmit}>
-                                            {editingPriority ? "Update Priority" : "Create Priority"}
-                                        </Button>
-                                    </div>
-                                </div>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
-
-                    {/* Priority Levels Table */}
-                    <div className="rounded-md border overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="bg-muted/50">
-                                        <TableHead>Priority Value</TableHead>
-                                        <TableHead>Priority Label</TableHead>
-                                        <TableHead className="w-[100px]">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {priorityLevels.map((level, index) => (
-                                        <TableRow key={level.value} className={index % 2 === 0 ? "bg-background" : "bg-muted/20"}>
-                                            <TableCell className="font-medium">
-                                                <Badge variant="outline">Level {level.value}</Badge>
-                                            </TableCell>
-                                            <TableCell>{level.label}</TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    <Button variant="ghost" size="icon" onClick={() => handleEditPriority(level)}>
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button variant="ghost" size="icon">
-                                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                                            </Button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Delete Priority Level</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    Are you sure you want to delete this priority level? This may affect existing roles.
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction
-                                                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                                                    onClick={() => {
-                                                                        deletePriorityLevel(level.value);
-                                                                        toast.success("Priority level deleted successfully");
-                                                                    }}
-                                                                >
-                                                                    Delete
-                                                                </AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </div>
-                </TabsContent>
             </Tabs>
 
             {/* Employee Assignment Dialog */}

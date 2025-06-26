@@ -6,42 +6,90 @@ import { useLeaveStore } from '@/lib/leave-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Calendar, Search, Users } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import type { LeaveRequest } from '@/types/leave';
+
+
+
+const dummyRequests: LeaveRequest[] = [
+  {
+    id: 1,
+    employeeId: 1,
+    employeeName: 'John Admin',
+    reason: 'Personal',
+    status: 'pending',
+    type: 'personal', 
+    hours: 8,
+    startDate: '2025-07-01',
+    endDate: '2025-07-01',
+    reviewedAt: null,
+    reviewedBy: null,
+  },
+  {
+    id: 2,
+    employeeId: 2,
+    employeeName: 'Jane Smith',
+    reason: 'Vacation',
+    status: 'approved',
+    type: 'annual',
+    hours: 16,
+    startDate: '2025-07-05',
+    endDate: '2025-07-06',
+    reviewedAt: '2025-06-20T10:00:00Z',
+    reviewedBy: 'HR Department',
+  },
+  {
+    id: 3,
+    employeeId: 3,
+    employeeName: 'Alice Johnson',
+    reason: 'Medical',
+    status: 'rejected',
+    type: 'personal', 
+    hours: 4,
+    startDate: '2025-06-25',
+    endDate: '2025-06-25',
+    reviewedAt: '2025-06-22T14:30:00Z',
+    reviewedBy: 'HR Department',
+  },
+];
+
 
 export default function AdminLeavePage() {
   const { user } = useAuth();
   const { getAllLeaveRequests, updateLeaveRequest, updateLeaveBalance, calculateLeaveBalance } = useLeaveStore();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Mock employees - in a real app, this would come from your user store
-  const employees = [
-    { id: '1', name: 'John Admin', employmentType: 'full-time' },
-    { id: '2', name: 'Jane Employee', employmentType: 'full-time' },
-  ];
+  // // Mock employees - in a real app, this would come from your user store
+  // const employees = [
+  //   { id: '1', name: 'John Admin', employmentType: 'full-time' },
+  //   { id: '2', name: 'Jane Employee', employmentType: 'full-time' },
+  // ];
 
-  const leaveRequests = getAllLeaveRequests().sort((a, b) => 
+  const leaveRequests = getAllLeaveRequests().sort((a, b) =>
     new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
   );
 
-  const filteredRequests = leaveRequests.filter(request =>
-    request.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.status.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // const filteredRequests = leaveRequests.filter(request =>
+  //   request.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //   request.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //   request.status.toLowerCase().includes(searchTerm.toLowerCase())
+  // );
+
+  const filteredRequests = dummyRequests;
 
   const handleUpdateStatus = (id: string, status: 'approved' | 'rejected') => {
     const request = leaveRequests.find(r => r.id === id);
     if (!request) return;
 
     updateLeaveRequest(id, status, user?.name || '');
-    
+
     if (status === 'approved') {
       updateLeaveBalance(request.userId, request.type, request.hours);
     }
-    
+
     toast.success(`Leave request ${status}`);
   };
 
@@ -61,12 +109,10 @@ export default function AdminLeavePage() {
   const rejectedRequests = leaveRequests.filter(r => r.status === 'rejected').length;
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto">
       <div className="flex items-center gap-4 mb-8">
-        <Calendar className="h-8 w-8 text-primary" />
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Leave Management</h1>
-          <p className="text-muted-foreground">Review and manage leave requests</p>
         </div>
       </div>
 
@@ -103,16 +149,6 @@ export default function AdminLeavePage() {
       </div>
 
       <Tabs defaultValue="requests" className="mt-8">
-        <TabsList>
-          <TabsTrigger value="requests" className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Leave Requests
-          </TabsTrigger>
-          <TabsTrigger value="balances" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Leave Balances
-          </TabsTrigger>
-        </TabsList>
 
         <TabsContent value="requests">
           <div className="flex justify-between items-center mb-6">
@@ -129,7 +165,7 @@ export default function AdminLeavePage() {
           </div>
 
           <div className="space-y-4">
-            {filteredRequests.map((request) => (
+          {filteredRequests.map((request: LeaveRequest) => (
               <Card key={request.id}>
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start">
@@ -137,10 +173,21 @@ export default function AdminLeavePage() {
                       <h3 className="font-semibold">{request.employeeName}</h3>
                       <p className="text-sm text-muted-foreground mt-1">{request.reason}</p>
                     </div>
-                    <span className={`px-2 py-1 rounded text-xs ${getStatusColor(request.status)}`}>
-                      {request.status}
-                    </span>
+                    <div className="flex flex-col items-end gap-1">
+                      <div className="flex items-center gap-3">
+                        <span className={`px-2 py-1 rounded text-xs ${getStatusColor(request.status)}`}>
+                          {request.status}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          Available {request.type} leave: <strong>
+                            {/* {calculateLeaveBalance(request.employeeId)?.[request.type] ?? 0}h */}
+                            {calculateLeaveBalance(request.employeeId.toString())?.[request.type] ?? 0}h
+                          </strong>
+                        </span>
+                      </div>
+                    </div>
                   </div>
+
                   <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground">Leave Type</p>
@@ -163,12 +210,12 @@ export default function AdminLeavePage() {
                     <div className="mt-4 flex justify-end gap-4">
                       <Button
                         variant="outline"
-                        onClick={() => handleUpdateStatus(request.id, 'rejected')}
+                        onClick={() => handleUpdateStatus(request.id.toString(), 'rejected')}
                       >
                         Reject
                       </Button>
                       <Button
-                        onClick={() => handleUpdateStatus(request.id, 'approved')}
+                        onClick={() => handleUpdateStatus(request.id.toString(), 'approved')}
                       >
                         Approve
                       </Button>
@@ -192,41 +239,6 @@ export default function AdminLeavePage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="balances">
-          <div className="space-y-6">
-            <h2 className="text-2xl font-semibold">Employee Leave Balances</h2>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {employees.filter(emp => emp.employmentType === 'full-time').map((employee) => {
-                const balance = calculateLeaveBalance(employee.id);
-                return (
-                  <Card key={employee.id}>
-                    <CardContent className="p-6">
-                      <h3 className="font-semibold text-lg mb-4">{employee.name}</h3>
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Annual Leave</span>
-                          <span className="font-medium">{balance.annual}h</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Personal Leave</span>
-                          <span className="font-medium">{balance.personal}h</span>
-                        </div>
-                        <div className="h-2 bg-gray-100 rounded-full mt-2">
-                          <div
-                            className="h-2 bg-primary rounded-full"
-                            style={{
-                              width: `${Math.min(100, (balance.annual / (balance.annual + balance.personal)) * 100)}%`
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        </TabsContent>
       </Tabs>
     </div>
   );

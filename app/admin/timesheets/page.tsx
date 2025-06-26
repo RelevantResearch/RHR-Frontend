@@ -139,17 +139,15 @@ export default function AdminTimesheetsPage() {
     }));
 
   return (
-    <div className="container mx-auto py-4 md:py-8 px-4">
+    <div className="container">
       <div className="flex items-center gap-4 mb-6 md:mb-8">
-        <Clock className="h-6 w-6 md:h-8 md:w-8 text-primary" />
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Timesheet Management</h1>
-          <p className="text-sm md:text-base text-muted-foreground">Review and manage employee timesheets</p>
         </div>
       </div>
 
       {/* Mobile Filters */}
-      <div className="flex flex-col gap-4 mb-6">
+      <div className="flex flex-wrap items-center gap-4 mb-6">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input

@@ -98,7 +98,7 @@ export default function LeavePage() {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      {/* <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Annual Leave Balance</CardTitle>
@@ -120,7 +120,7 @@ export default function LeavePage() {
             <p className="text-sm text-muted-foreground">Available hours</p>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
 
       <div className="mt-8 flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Leave Requests</h2>
