@@ -64,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, []);
 
+  // In your login function:
   const login = async (email: string, password: string) => {
     showLoading("Taking you in...");
     setIsLoading(true);
@@ -71,18 +72,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { user, accessToken } = await login_api(email, password);
 
-      // console.log("[Login] user:", user);
-      // console.log("[Login] accessToken:", accessToken);
-
       const userWithRole: User = {
         ...user,
         role: user.UserRole?.[0]?.role || null,
       };
 
+      // Set both localStorage and cookies
       setUser(userWithRole);
       setAccessToken(accessToken);
       setToLocalStorage("user", userWithRole);
       setToLocalStorage("accessToken", accessToken);
+
+      // Set cookies that middleware can read
+      document.cookie = `user=${encodeURIComponent(JSON.stringify(userWithRole))}; path=/`;
+      document.cookie = `accessToken=${accessToken}; path=/`;
     } catch (err) {
       console.error("[Login] Failed:", err);
     } finally {

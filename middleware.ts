@@ -23,7 +23,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Admin route protection
-  if (pathname.startsWith('/admin')) {
+  if (pathname.startsWith('/api')) {
     const token = request.cookies.get('access_token')?.value;
 
     if (!token) {

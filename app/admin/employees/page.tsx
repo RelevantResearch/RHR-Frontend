@@ -1,21 +1,19 @@
 'use client';
 
+
+import Pagination from '@/components/ui/pagination';
 import { useRoles } from '@/hooks/useRoles';
 import { createUserApi, deleteUserApi } from '@/api/user';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
-// import { useTicketStore } from '@/lib/ticket-store';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-// import { Textarea } from "@/components/ui/textarea";
-import { TicketIcon, Plus, Search, Filter, Eye, Trash2, Mail, Phone, Building2, Calendar, Download, ChevronLeft, ChevronRight, Edit } from "lucide-react";
+import { Plus, Search, Eye, Trash2, Mail, Phone, Building2, Calendar, Download, Edit } from "lucide-react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
@@ -49,15 +47,8 @@ import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-
-import { useDepartments } from "@/hooks/useDepartments"; // adjust path if needed
-
-
-const departments = [
-  "Web Development",
-  "Data Analytics",
-  "Public Impact",
-];
+import { useDepartments } from "@/hooks/useDepartments";
+import { usePagination } from '@/hooks/usePagination';
 
 
 
@@ -97,6 +88,7 @@ export default function EmployeesPage() {
   const [showEmployeeForm, setShowEmployeeForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const employeesPerPage = 10;
 
 
   useEffect(() => {
@@ -202,113 +194,7 @@ export default function EmployeesPage() {
     .sort((a, b) => Number(a.isDeleted) - Number(b.isDeleted));
 
 
-
-  // Pagination logic
-  const employeesPerPage = 10;
-  const totalPages = Math.ceil(filteredEmployees.length / employeesPerPage);
-  const startIndex = (currentPage - 1) * employeesPerPage;
-  const endIndex = startIndex + employeesPerPage;
-  const currentEmployees = filteredEmployees.slice(startIndex, endIndex);
-
-  // Reset to first page when filters change
-  const handleFilterChange = (filterType: string, value: string) => {
-    setCurrentPage(1);
-    if (filterType === 'search') {
-      setSearchTerm(value);
-    } else if (filterType === 'department') {
-      setSelectedDepartment(value);
-    }
-  };
-
-  const renderPagination = () => {
-    if (filteredEmployees.length === 0) return null;
-    if (totalPages <= 1) {
-      return (
-        <div className="mt-4 text-sm text-muted-foreground text-center">
-          Showing all {filteredEmployees.length} employees
-        </div>
-      );
-    }
-
-
-    const getVisiblePages = () => {
-      const delta = 2;
-      const range = [];
-      const rangeWithDots = [];
-
-      for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
-        range.push(i);
-      }
-
-      if (currentPage - delta > 2) {
-        rangeWithDots.push(1, '...');
-      } else {
-        rangeWithDots.push(1);
-      }
-
-      rangeWithDots.push(...range);
-
-      if (currentPage + delta < totalPages - 1) {
-        rangeWithDots.push('...', totalPages);
-      } else {
-        rangeWithDots.push(totalPages);
-      }
-
-      return rangeWithDots;
-    };
-
-    return (
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
-        <div className="text-sm text-muted-foreground order-2 sm:order-1">
-          Showing {startIndex + 1} to {Math.min(endIndex, filteredEmployees.length)} of {filteredEmployees.length} employees
-        </div>
-        <div className="flex items-center gap-1 order-1 sm:order-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-            className="h-8 w-8 p-0 sm:w-auto sm:px-3"
-          >
-            <ChevronLeft className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Previous</span>
-          </Button>
-
-          <div className="hidden sm:flex items-center gap-1">
-            {getVisiblePages().map((page, index) => (
-              <Button
-                key={index}
-                variant={currentPage === page ? "default" : "outline"}
-                size="sm"
-                onClick={() => typeof page === 'number' && setCurrentPage(page)}
-                disabled={typeof page !== 'number'}
-                className="h-8 w-8 p-0"
-              >
-                {page}
-              </Button>
-            ))}
-          </div>
-
-          {/* Mobile pagination info */}
-          <div className="sm:hidden flex items-center px-3 py-1 text-sm bg-muted rounded">
-            {currentPage} / {totalPages}
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-            className="h-8 w-8 p-0 sm:w-auto sm:px-3"
-          >
-            <span className="hidden sm:inline">Next</span>
-            <ChevronRight className="h-4 w-4 sm:ml-2" />
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
+  const { paginated: currentEmployees, totalPages } = usePagination(filteredEmployees, currentPage, employeesPerPage);
 
 
 
@@ -860,7 +746,13 @@ export default function EmployeesPage() {
                 </TableBody>
               </Table>
             </div>
-            {renderPagination()}
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredEmployees.length}
+              itemsPerPage={employeesPerPage}
+              onPageChange={setCurrentPage}
+              label="employees"
+            />
           </div>
         </CardContent>
       </Card>

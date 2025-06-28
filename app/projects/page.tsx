@@ -1,11 +1,13 @@
 "use client";
 
+import { usePagination } from '@/hooks/usePagination';
+import Pagination from '@/components/ui/pagination';
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { FolderKanban, Plus, Calendar, Users, Clock, Eye, Trash2, Archive, ChevronLeft, ChevronRight, Search, Check, X, Edit } from "lucide-react";
+import { X, Plus, Users, Eye, Trash2, ChevronLeft, ChevronRight, Check, Edit } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -63,6 +65,7 @@ interface Project {
 }
 
 const demoProjects: Project[] = [
+
   {
     id: '1',
     name: 'E-commerce Platform Redesign',
@@ -75,7 +78,146 @@ const demoProjects: Project[] = [
     deadline: '2024-08-31',
     status: 'ACTIVE',
     assignedEmployees: ['1', '2', '3']
-  }
+  },
+  {
+    id: '2',
+    name: 'E-commerce Platform Redesign',
+    description: 'Complete overhaul of the existing e-commerce platform with modern UI/UX principles, improved performance, and enhanced security features.',
+    clientName: 'TechRetail Solutions',
+    budget: 85000,
+    department: 'Web Development',
+    startDate: '2024-03-01',
+    endDate: '2024-08-31',
+    deadline: '2024-08-31',
+    status: 'ACTIVE',
+    assignedEmployees: ['1', '2', '3']
+  },
+
+  {
+    id: '3',
+    name: 'E-commerce Platform Redesign',
+    description: 'Complete overhaul of the existing e-commerce platform with modern UI/UX principles, improved performance, and enhanced security features.',
+    clientName: 'TechRetail Solutions',
+    budget: 85000,
+    department: 'Web Development',
+    startDate: '2024-03-01',
+    endDate: '2024-08-31',
+    deadline: '2024-08-31',
+    status: 'ACTIVE',
+    assignedEmployees: ['1', '2', '3']
+  },
+
+  {
+    id: '4',
+    name: 'E-commerce Platform Redesign',
+    description: 'Complete overhaul of the existing e-commerce platform with modern UI/UX principles, improved performance, and enhanced security features.',
+    clientName: 'TechRetail Solutions',
+    budget: 85000,
+    department: 'Web Development',
+    startDate: '2024-03-01',
+    endDate: '2024-08-31',
+    deadline: '2024-08-31',
+    status: 'ACTIVE',
+    assignedEmployees: ['1', '2', '3']
+  },
+
+  {
+    id: '5',
+    name: 'E-commerce Platform Redesign',
+    description: 'Complete overhaul of the existing e-commerce platform with modern UI/UX principles, improved performance, and enhanced security features.',
+    clientName: 'TechRetail Solutions',
+    budget: 85000,
+    department: 'Web Development',
+    startDate: '2024-03-01',
+    endDate: '2024-08-31',
+    deadline: '2024-08-31',
+    status: 'ACTIVE',
+    assignedEmployees: ['1', '2', '3']
+  },
+
+  {
+    id: '6',
+    name: 'E-commerce Platform Redesign',
+    description: 'Complete overhaul of the existing e-commerce platform with modern UI/UX principles, improved performance, and enhanced security features.',
+    clientName: 'TechRetail Solutions',
+    budget: 85000,
+    department: 'Web Development',
+    startDate: '2024-03-01',
+    endDate: '2024-08-31',
+    deadline: '2024-08-31',
+    status: 'ACTIVE',
+    assignedEmployees: ['1', '2', '3']
+  },
+
+  {
+    id: '7',
+    name: 'E-commerce Platform Redesign',
+    description: 'Complete overhaul of the existing e-commerce platform with modern UI/UX principles, improved performance, and enhanced security features.',
+    clientName: 'TechRetail Solutions',
+    budget: 85000,
+    department: 'Web Development',
+    startDate: '2024-03-01',
+    endDate: '2024-08-31',
+    deadline: '2024-08-31',
+    status: 'ACTIVE',
+    assignedEmployees: ['1', '2', '3']
+  },
+
+  {
+    id: '8',
+    name: 'E-commerce Platform Redesign',
+    description: 'Complete overhaul of the existing e-commerce platform with modern UI/UX principles, improved performance, and enhanced security features.',
+    clientName: 'TechRetail Solutions',
+    budget: 85000,
+    department: 'Web Development',
+    startDate: '2024-03-01',
+    endDate: '2024-08-31',
+    deadline: '2024-08-31',
+    status: 'ACTIVE',
+    assignedEmployees: ['1', '2', '3']
+  },
+
+  {
+    id: '9',
+    name: 'E-commerce Platform Redesign',
+    description: 'Complete overhaul of the existing e-commerce platform with modern UI/UX principles, improved performance, and enhanced security features.',
+    clientName: 'TechRetail Solutions',
+    budget: 85000,
+    department: 'Web Development',
+    startDate: '2024-03-01',
+    endDate: '2024-08-31',
+    deadline: '2024-08-31',
+    status: 'ACTIVE',
+    assignedEmployees: ['1', '2', '3']
+  },
+
+  {
+    id: '10',
+    name: 'E-commerce Platform Redesign',
+    description: 'Complete overhaul of the existing e-commerce platform with modern UI/UX principles, improved performance, and enhanced security features.',
+    clientName: 'TechRetail Solutions',
+    budget: 85000,
+    department: 'Web Development',
+    startDate: '2024-03-01',
+    endDate: '2024-08-31',
+    deadline: '2024-08-31',
+    status: 'ACTIVE',
+    assignedEmployees: ['1', '2', '3']
+  },
+
+  {
+    id: '11',
+    name: 'E-commerce Platform Redesign',
+    description: 'Complete overhaul of the existing e-commerce platform with modern UI/UX principles, improved performance, and enhanced security features.',
+    clientName: 'TechRetail Solutions',
+    budget: 85000,
+    department: 'Web Development',
+    startDate: '2024-03-01',
+    endDate: '2024-08-31',
+    deadline: '2024-08-31',
+    status: 'ACTIVE',
+    assignedEmployees: ['1', '2', '3']
+  },
 ];
 
 const departments = ['Web Development', 'Data Analysis', 'Public Impact'];
@@ -244,11 +386,16 @@ export default function ProjectsPage() {
     return matchesDepartment && matchesStatus && matchesSearch;
   });
 
+
   const projectsPerPage = 10;
-  const totalPages = Math.ceil(filteredProjects.length / projectsPerPage);
-  const startIndex = (currentPage - 1) * projectsPerPage;
-  const endIndex = startIndex + projectsPerPage;
-  const currentProjects = filteredProjects.slice(startIndex, endIndex);
+  const { paginated: currentProjects, totalPages, startIndex } = usePagination(
+    filteredProjects,
+    currentPage,
+    projectsPerPage
+  );
+
+  const endIndex = startIndex + currentProjects.length;
+
 
   // Reset to first page when filters change
   const handleFilterChange = (filterType: string, value: string) => {
@@ -1080,58 +1227,14 @@ export default function ProjectsPage() {
               </Table>
             </div>
 
-            {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-4">
-                <div className="text-sm text-muted-foreground">
-                  Showing {startIndex + 1} to {Math.min(endIndex, filteredProjects.length)} of {filteredProjects.length} projects
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    <span className="hidden sm:inline">Previous</span>
-                  </Button>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let page;
-                      if (totalPages <= 5) {
-                        page = i + 1;
-                      } else if (currentPage <= 3) {
-                        page = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        page = totalPages - 4 + i;
-                      } else {
-                        page = currentPage - 2 + i;
-                      }
-                      return (
-                        <Button
-                          key={page}
-                          variant={currentPage === page ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setCurrentPage(page)}
-                          className="w-8 h-8 p-0"
-                        >
-                          {page}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages}
-                  >
-                    <span className="hidden sm:inline">Next</span>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
+            <Pagination
+              currentPage={currentPage}
+              totalItems={filteredProjects.length}
+              itemsPerPage={projectsPerPage}
+              onPageChange={setCurrentPage}
+              label="projects"
+            />
+
           </div>
         </div>
       </div>
