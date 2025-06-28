@@ -1,6 +1,6 @@
 'use client';
 
-
+import type { userForm, EmploymentType, userStatus } from '@/types/user';
 import Pagination from '@/components/ui/pagination';
 import { useRoles } from '@/hooks/useRoles';
 import { createUserApi, deleteUserApi } from '@/api/user';
@@ -49,46 +49,46 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useDepartments } from "@/hooks/useDepartments";
 import { usePagination } from '@/hooks/usePagination';
+import CustomSelect from '@/components/CustomSelect';
 
 
-
-const emptyEmployeeForm = {
+const emptyuserForm: userForm = {
   name: '',
   email: '',
   password: '',
   phone: '',
-  department: 'Web Development',
+  department: '',
   position: '',
   joinDate: format(new Date(), 'yyyy-MM-dd'),
-  employmentType: 'full-time' as 'full-time' | 'part-time',
-  role: 'employee' as 'employee' | 'admin',
+  employmentType: 'full-time',
+  role: '',
   address: '',
   bankDetails: {
     accountHolder: '',
     accountNumber: '',
     bankName: '',
     panId: '',
-    bankAddress: ''
-  }
+    bankAddress: '',
+  },
 };
 
 export default function EmployeesPage() {
+  const [newEmployee, setNewEmployee] = useState<userForm>(emptyuserForm);
   const { departments, loading: loadingDepartments } = useDepartments();
   const { user } = useAuth();
   const { roles } = useRoles();
   const { employees: fetchedEmployees, loading } = useEmployees();
   const [employees, setEmployees] = useState<any[]>([]);
-  const [selectedStatus, setSelectedStatus] = useState<'all' | 'active' | 'inactive'>('all');
-  const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [editingEmployee, setEditingEmployee] = useState<any>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
   const [showEditForm, setShowEditForm] = useState(false);
-  const [newEmployee, setNewEmployee] = useState<typeof emptyEmployeeForm>(emptyEmployeeForm);
-  const [showEmployeeForm, setShowEmployeeForm] = useState(false);
+  const [showuserForm, setShowuserForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const employeesPerPage = 10;
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedDepartment, setSelectedDepartment] = useState("all");
 
 
   useEffect(() => {
@@ -97,18 +97,19 @@ export default function EmployeesPage() {
     }
   }, [fetchedEmployees, loading]);
 
+
   const handleAddEmployee = async () => {
     if (!newEmployee.name || !newEmployee.email || !newEmployee.password || !newEmployee.phone) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    // Build payload only with fields you want to send now
     const payload = {
       name: newEmployee.name,
       email: newEmployee.email,
       password: newEmployee.password,
       phone: newEmployee.phone,
+      position: newEmployee.position,
       roleId: newEmployee.role === 'admin' ? 1 : 2,
       fullTimer: newEmployee.employmentType === 'full-time',
       address: newEmployee.address,
@@ -121,8 +122,8 @@ export default function EmployeesPage() {
     try {
       await createUserApi(payload);
       toast.success('User created successfully');
-      setShowEmployeeForm(false);
-      setNewEmployee(emptyEmployeeForm);
+      setShowuserForm(false);
+      setNewEmployee(emptyuserForm);
     } catch (err) {
       toast.error((err as Error).message);
     }
@@ -152,19 +153,10 @@ export default function EmployeesPage() {
       return;
     }
 
-    console.log(
-      `%c[DEBUG] Attempting to delete user`,
-      "color: orange; font-weight: bold;",
-      {
-        id: userToDelete.id,
-        name: userToDelete.name,
-        email: userToDelete.email,
-      }
-    );
 
     try {
-      await deleteUserApi(id); // Call backend API
-      setEmployees((prev) => prev.filter((emp) => emp.id !== id)); // Update frontend
+      await deleteUserApi(id);
+      setEmployees((prev) => prev.filter((emp) => emp.id !== id)); 
       toast.success(`Deleted employee: ${userToDelete.name}`);
     } catch (err) {
       console.error(
@@ -195,25 +187,56 @@ export default function EmployeesPage() {
 
 
   const { paginated: currentEmployees, totalPages } = usePagination(filteredEmployees, currentPage, employeesPerPage);
+  const roleOptions = roles.map((role) => ({
+    label: role.name,
+    value: String(role.id),
+  }));
 
+  const departmentOptions = departments.map((dept) => ({
+    label: dept.name,
+    value: dept.name, 
+  }));
 
+  const employmentTypeOptions = [
+    { label: "Full Time", value: "full-time" },
+    { label: "Part Time", value: "part-time" },
+  ];
+
+  const statusOptions = [
+    { label: 'Active', value: 'active' },
+    { label: 'Inactive', value: 'inactive' },
+  ];
+
+  const statusFilter = [
+    { label: "All Status", value: "all" },
+    { label: "Active", value: "active" },
+    { label: "Inactive", value: "inactive" },
+  ];
+
+  const departmentFilter = [
+    { label: "All Departments", value: "all" },
+    ...departments.map(dept => ({
+      label: dept.name,
+      value: dept.name,
+    })),
+  ];
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl md:text-3xl font-bold">Employees</h1>
         <Button onClick={() => {
-          setNewEmployee(emptyEmployeeForm);
+          setNewEmployee(emptyuserForm);
           setIsEditing(false);
-          setShowEmployeeForm(true);
+          setShowuserForm(true);
         }}>
           <Plus className="mr-2 h-4 w-4" />
           Add Employee
         </Button>
       </div>
 
-      {/* Add Employee Dialog */}
-      <Dialog open={showEmployeeForm} onOpenChange={setShowEmployeeForm}>
+      {/* Add Dialog */}
+      <Dialog open={showuserForm} onOpenChange={setShowuserForm}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogTitle>{isEditing ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
 
@@ -252,28 +275,16 @@ export default function EmployeesPage() {
                 onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
               />
             </div>
-            {/* TODO: Implement department logic later */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Department</label>
-              <Select
+              <CustomSelect
+                options={departmentOptions}
                 value={newEmployee.department}
-                onValueChange={(value) => setNewEmployee({ ...newEmployee, department: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select department" />
-                </SelectTrigger>
-                <SelectContent>
-                  {loadingDepartments ? (
-                    <SelectItem disabled value="">Loading...</SelectItem>
-                  ) : (
-                    departments.map((dept) => (
-                      <SelectItem key={dept.id} value={dept.name}>
-                        {dept.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                onValueChange={(val) =>
+                  setNewEmployee({ ...newEmployee, department: val })
+                }
+                placeholder="Select department"
+              />
             </div>
 
 
@@ -287,21 +298,14 @@ export default function EmployeesPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Role</label>
-              <Select
+              <CustomSelect
+                options={roleOptions}
                 value={newEmployee.role}
-                onValueChange={(value) => setNewEmployee({ ...newEmployee, role: value as 'admin' | 'employee' })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  {roles.map((role) => (
-                    <SelectItem key={role.id} value={role.name}>
-                      {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onValueChange={(val) =>
+                  setNewEmployee({ ...newEmployee, role: val })
+                }
+                placeholder="Select role"
+              />
             </div>
 
             <div className="space-y-2">
@@ -314,19 +318,16 @@ export default function EmployeesPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Employment Type</label>
-              <Select
+              <CustomSelect
+                options={employmentTypeOptions}
                 value={newEmployee.employmentType}
-                onValueChange={(value: 'full-time' | 'part-time') =>
-                  setNewEmployee({ ...newEmployee, employmentType: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select employment type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="full-time">Full Time</SelectItem>
-                  <SelectItem value="part-time">Part Time</SelectItem>
-                </SelectContent>
-              </Select>
+                onValueChange={(value) =>
+                  setNewEmployee({ ...newEmployee, employmentType: value as EmploymentType })
+                }
+                placeholder="Select employment type"
+              />
+
+
             </div>
             <div className="col-span-2 space-y-2">
               <label className="text-sm font-medium">Full Address</label>
@@ -339,8 +340,8 @@ export default function EmployeesPage() {
           </div>
           <div className="mt-6 flex justify-end gap-4">
             <Button type="button" variant="outline" onClick={() => {
-              setShowEmployeeForm(false);
-              setNewEmployee(emptyEmployeeForm);
+              setShowuserForm(false);
+              setNewEmployee(emptyuserForm);
               setIsEditing(false);
             }}>
               Cancel
@@ -354,7 +355,7 @@ export default function EmployeesPage() {
 
 
 
-      {/* Edit Employee Dialog - Restricted Fields */}
+      {/* Edit Dialog */}
       <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogTitle>Edit Employee</DialogTitle>
@@ -391,22 +392,14 @@ export default function EmployeesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Department</label>
-                  <Select
+                  <CustomSelect
+                    options={departmentOptions}
                     value={editingEmployee.department}
-                    onValueChange={(value) => setEditingEmployee({ ...editingEmployee, department: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select department" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {departments.map((dept) => (
-                        <SelectItem key={dept.id} value={dept.name}>
-                          {dept.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-
-                  </Select>
+                    onValueChange={(val) =>
+                      setNewEmployee({ ...editingEmployee, department: val })
+                    }
+                    placeholder="Select department"
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Position</label>
@@ -418,54 +411,39 @@ export default function EmployeesPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Role</label>
-                  <Select
-                    value={editingEmployee?.role}
-                    onValueChange={(value: string) => setEditingEmployee({ ...editingEmployee, role: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roles.map((role) => (
-                        <SelectItem key={role.id} value={role.name}>
-                          {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <CustomSelect
+                    options={roleOptions}
+                    value={editingEmployee.roleId}
+                    onValueChange={(val) =>
+                      setEditingEmployee({ ...editingEmployee, roleId: val })
+                    }
+                    placeholder="Select role"
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Employment Type</label>
-                  <Select
+                  <CustomSelect
+                    options={employmentTypeOptions}
                     value={editingEmployee.employmentType}
-                    onValueChange={(value: 'full-time' | 'part-time') =>
-                      setEditingEmployee({ ...editingEmployee, employmentType: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select employment type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="full-time">Full Time</SelectItem>
-                      <SelectItem value="part-time">Part Time</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    onValueChange={(value) =>
+                      setEditingEmployee({ ...editingEmployee, employmentType: value })
+                    }
+                    placeholder="Select employment type"
+                  />
+
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Status</label>
-                  <Select
+                  <CustomSelect
+                    options={statusOptions}
                     value={editingEmployee.status}
-                    onValueChange={(value: 'active' | 'inactive') =>
-                      setEditingEmployee({ ...editingEmployee, status: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    onValueChange={(value) =>
+                      setEditingEmployee({ ...editingEmployee, status: value as userStatus })
+                    }
+                    placeholder="Select status"
+                  />
+
                 </div>
               </div>
             )}
@@ -497,36 +475,20 @@ export default function EmployeesPage() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue placeholder="Filter by department" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept.id} value={dept.name}>
-                      {dept.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-
-              </Select>
-              <Select
+              <CustomSelect
+                options={departmentFilter}
+                value={selectedDepartment}
+                onValueChange={setSelectedDepartment}
+                placeholder="All Department"
+                className="w-full sm:w-[200px]"
+              />
+              <CustomSelect
+                options={statusFilter}
                 value={selectedStatus}
-                onValueChange={(value) => {
-                  if (value === "active" || value === "all" || value === "inactive") {
-                    setSelectedStatus(value);
-                  }
-                }}
-              >
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
+                onValueChange={(value) => setSelectedStatus(value)}
+                placeholder="All Status"
+                className="w-full sm:w-[200px]"
+              />
 
 
             </div>

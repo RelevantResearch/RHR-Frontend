@@ -409,6 +409,7 @@ export default function ProjectsPage() {
     }
   };
 
+
   return (
     <div className="container">
       <div className="flex items-center gap-4 mb-6 md:mb-8">

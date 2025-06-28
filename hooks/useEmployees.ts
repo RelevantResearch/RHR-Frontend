@@ -14,73 +14,6 @@ const DEFAULT_DOCUMENTS = {
   idDocument: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2064&auto=format&fit=crop",
 };
 
-// export const useEmployees = () => {
-//   const [employees, setEmployees] = useState<any[]>([]);
-//   const [loading, setLoading] = useState(false);
-
-//   useEffect(() => {
-//     const fetchEmployees = async () => {
-//       setLoading(true);
-//       try {
-//         const rawEmployees = await getAllEmployees();
-
-//         const enriched = await Promise.all(
-//           rawEmployees.map(async (emp: any) => {
-//             let bankDetails = null;
-//             try {
-//               bankDetails = await getBankDetails(Number(emp.id));
-//             } catch (err) {
-//               console.warn(`Bank details fetch failed for user ${emp.id}`, err);
-//             }
-
-//             return {
-//               ...emp,
-//               joinDate: emp.joinDate || new Date().toISOString(),
-//               department: "Web Development", // Static fallback
-//               avatar: DEFAULT_AVATAR,
-//               documents: DEFAULT_DOCUMENTS,
-//               position: emp.position || "",
-//               role: emp.role?.name || "Employee",
-//               employmentType: emp.fullTimer ? "full-time" : "part-time",
-//               status: emp.isDeleted ? "inactive" : "active",
-//               bankDetails: bankDetails
-//                 ? {
-//                   accountHolder: bankDetails.acName || "",
-//                   accountNumber: bankDetails.acNumber || "",
-//                   bankName: bankDetails.name || "",
-//                   panId: bankDetails.tax || "",
-//                   bankAddress: bankDetails.address || "",
-//                 }
-//                 : {
-//                   accountHolder: "",
-//                   accountNumber: "",
-//                   bankName: "",
-//                   panId: "",
-//                   bankAddress: "",
-//                 },
-//             };
-//           })
-//         );
-
-//         // ✅ Sort: Active (isDeleted: false) at the top
-//         const sortedEmployees = enriched.sort(
-//           (a, b) => Number(a.isDeleted) - Number(b.isDeleted)
-//         );
-
-//         setEmployees(sortedEmployees);
-//       } catch (err) {
-//         toast.error("Failed to load employees");
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchEmployees();
-//   }, []);
-
-//   return { employees, loading };
-// };
-
 
 export const useEmployees = () => {
   const [employees, setEmployees] = useState<any[]>([]);
@@ -94,17 +27,20 @@ export const useEmployees = () => {
 
         const enriched = rawEmployees.map((emp: any) => {
           const bankDetails = emp.bankInfo;
+          const userRole = emp.UserRole?.[0]?.role;
+          const department = emp.department;
 
           return {
             ...emp,
             joinDate: emp.joinDate || new Date().toISOString(),
-            department: "Web Development", // Static fallback
             avatar: emp.profilePic || DEFAULT_AVATAR,
             documents: DEFAULT_DOCUMENTS,
             position: emp.position || "",
-            role: emp.role?.name || "Employee",
+            role: userRole?.name || "Employee",
+            roleId: userRole?.id ? String(userRole.id) : "",
             employmentType: emp.fullTimer ? "full-time" : "part-time",
             status: emp.isDeleted ? "inactive" : "active",
+            department: department?.name || "",
             bankDetails: bankDetails
               ? {
                   accountHolder: bankDetails.acName || "",
