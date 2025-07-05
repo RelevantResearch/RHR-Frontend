@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import type { LeaveRequest } from '@/types/leave';
+import { BreadcrumbNavigation } from '@/components/ui/breadcrumbs-navigation';
 
 
 
@@ -110,11 +111,8 @@ export default function AdminLeavePage() {
 
   return (
     <div className="container mx-auto">
-      <div className="flex items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Leave Management</h1>
-        </div>
-      </div>
+      <BreadcrumbNavigation/>
+      
 
       <div className="grid gap-6 md:grid-cols-3">
         <Card>

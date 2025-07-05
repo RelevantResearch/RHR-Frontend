@@ -18,6 +18,7 @@ import type { Department } from '@/types/department';
 
 
 import { useDepartments } from "@/hooks/useDepartments";
+import { BreadcrumbNavigation } from "@/components/ui/breadcrumbs-navigation";
 
 
 
@@ -94,11 +95,7 @@ export default function DepartmentsPage() {
 
   return (
     <div className="container">
-      <div className="flex items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Departments</h1>
-        </div>
-      </div>
+      <BreadcrumbNavigation/>
 
       <div className="grid gap-6 md:grid-cols-3">
         <Card>

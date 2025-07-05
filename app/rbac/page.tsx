@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Shield, Plus, Edit, Trash2, Users, Search, Eye} from "lucide-react";
+import { Shield, Plus, Edit, Trash2, Users, Search, Eye } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -13,13 +11,6 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -40,13 +31,17 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useRBACStore, Role, Permission } from "@/lib/rbac-store";
 import { useAuth } from "@/lib/auth-context";
 import { format } from "date-fns";
+import { useRouter } from "next/navigation";
+import { BreadcrumbNavigation } from '@/components/ui/breadcrumbs-navigation';
+
+
+
 
 
 const mockEmployees = [
@@ -102,152 +97,36 @@ const mockEmployees = [
 
 export default function RBACPage() {
     const { user } = useAuth();
+    const router = useRouter();
     const {
         roles,
         permissions,
-        priorityLevels,
-        addRole,
-        updateRole,
         deleteRole,
     } = useRBACStore();
 
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedTab, setSelectedTab] = useState("roles");
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-    const [selectedPermission, setSelectedPermission] = useState<Permission | null>(null);
-
-    // Employee assignment states
-    const [employeeSearchTerm, setEmployeeSearchTerm] = useState("");
-    const [selectedDepartment, setSelectedDepartment] = useState("all");
-    const [showEmployeeAssignment, setShowEmployeeAssignment] = useState(false);
-    const [assigningToRole, setAssigningToRole] = useState<Role | null>(null);
-
-    // Role form state
-    const [roleForm, setRoleForm] = useState({
-        name: "",
-        description: "",
-        permissions: [] as string[],
-        assignedEmployees: [] as string[],
-        isActive: true,
-    });
-    const [editingRole, setEditingRole] = useState<Role | null>(null);
-    const [showRoleDialog, setShowRoleDialog] = useState(false);
-
-    const departments = Array.from(new Set(mockEmployees.map(emp => emp.department)));
-
-    const handleRoleSubmit = () => {
-        if (!roleForm.name || !roleForm.description) {
-            toast.error("Please fill in all required fields");
-            return;
-        }
-
-        const roleData = { ...roleForm };
-
-
-        if (editingRole) {
-            updateRole(editingRole.id, roleData);
-            toast.success("Role updated successfully");
-        } else {
-            // addRole(roleData);
-            toast.success("Role created successfully");
-        }
-
-        setRoleForm({
-            name: "",
-            description: "",
-            permissions: [],
-            assignedEmployees: [],
-            isActive: true,
-        });
-        setEditingRole(null);
-        setShowRoleDialog(false);
-    };
-
-
-
-    const handleEditRole = (role: Role) => {
-        setRoleForm({
-            name: role.name,
-            description: role.description,
-            permissions: role.permissions,
-            assignedEmployees: (role as any).assignedEmployees || [],
-            isActive: role.isActive,
-        });
-        setEditingRole(role);
-        setShowRoleDialog(true);
-    };
-
-
-
-    const handleAssignEmployees = (role: Role) => {
-        setAssigningToRole(role);
-        setEmployeeSearchTerm("");
-        setSelectedDepartment("all");
-        setShowEmployeeAssignment(true);
-    };
-
-    const handleEmployeeAssignment = (employeeId: string, isAssigned: boolean) => {
-        if (!assigningToRole) return;
-
-        const currentAssignments = (assigningToRole as any).assignedEmployees || [];
-        let newAssignments;
-
-        if (isAssigned) {
-            newAssignments = [...currentAssignments, employeeId];
-        } else {
-            newAssignments = currentAssignments.filter((id: string) => id !== employeeId);
-        }
-
-        updateRole(assigningToRole.id, { assignedEmployees: newAssignments });
-        setAssigningToRole({ ...assigningToRole, assignedEmployees: newAssignments } as any);
-    };
-
-    const removeEmployeeFromRole = (roleId: string, employeeId: string) => {
-        const role = roles.find(r => r.id === roleId);
-        if (!role) return;
-
-        const currentAssignments = (role as any).assignedEmployees || [];
-        const newAssignments = currentAssignments.filter((id: string) => id !== employeeId);
-
-        updateRole(roleId, { assignedEmployees: newAssignments });
-        toast.success("Employee removed from role");
-    };
 
     const filteredRoles = roles.filter(role =>
         role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         role.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-
-
-    const filteredEmployees = mockEmployees.filter(employee => {
-        const matchesDepartment = selectedDepartment === "all" || employee.department === selectedDepartment;
-        const matchesSearch =
-            employee.name.toLowerCase().includes(employeeSearchTerm.toLowerCase()) ||
-            employee.email.toLowerCase().includes(employeeSearchTerm.toLowerCase()) ||
-            employee.department.toLowerCase().includes(employeeSearchTerm.toLowerCase());
-        return matchesDepartment && matchesSearch;
-    });
-
-    const groupedPermissions = permissions.reduce((acc, permission) => {
-        if (!acc[permission.resource]) {
-            acc[permission.resource] = [];
-        }
-        acc[permission.resource].push(permission);
-        return acc;
-    }, {} as Record<string, Permission[]>);
-
     const getEmployeeById = (id: string) => mockEmployees.find(emp => emp.id === id);
 
+    const handleAddRole = () => {
+        router.push('/rbac/add-role');
+    };
+
+    const handleEditRole = (role: Role) => {
+        router.push(`/rbac/edit-role?id=${role.id}`);
+    };
+
     return (
-        <div className="container">
-            <div className="flex items-center gap-4 mb-6 md:mb-8">
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Role-Based Access Control</h1>
-                </div>
-            </div>
+        <div className="container mx-auto">
+            <BreadcrumbNavigation />
 
-
+            
 
             <Tabs value="roles">
                 <TabsContent value="roles" className="space-y-4 md:space-y-6">
@@ -261,161 +140,27 @@ export default function RBACPage() {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
-                            <DialogTrigger asChild>
-                                <Button onClick={() => {
-                                    setRoleForm({
-                                        name: "",
-                                        description: "",
-                                        permissions: [],
-                                        assignedEmployees: [],
-                                        isActive: true,
-                                    });
-                                    setEditingRole(null);
-                                }} className="w-full md:w-auto">
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Add Role
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                                <DialogHeader>
-                                    <DialogTitle>{editingRole ? "Edit Role" : "Create New Role"}</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium">Role Name</label>
-                                            <Input
-                                                placeholder="Enter role name"
-                                                value={roleForm.name}
-                                                onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value })}
-                                            />
-                                        </div>
-
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium">Description</label>
-                                        <Textarea
-                                            placeholder="Enter role description"
-                                            value={roleForm.description}
-                                            onChange={(e) => setRoleForm({ ...roleForm, description: e.target.value })}
-                                        />
-                                    </div>
-
-                                    {/* Employee Assignment Section */}
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium">Assign Employees</label>
-                                        <div className="border rounded-lg p-4 space-y-4">
-                                            <div className="flex flex-col md:flex-row gap-4">
-                                                <div className="relative flex-1">
-                                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                    <Input
-                                                        placeholder="Search employees..."
-                                                        className="pl-10"
-                                                        value={employeeSearchTerm}
-                                                        onChange={(e) => setEmployeeSearchTerm(e.target.value)}
-                                                    />
-                                                </div>
-                                                <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                                                    <SelectTrigger className="w-full md:w-[200px]">
-                                                        <SelectValue placeholder="Filter by department" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="all">All Departments</SelectItem>
-                                                        {departments.map((dept) => (
-                                                            <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-
-                                            <div className="max-h-60 overflow-y-auto space-y-2">
-                                                {filteredEmployees.map((employee) => (
-                                                    <label key={employee.id} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded">
-                                                        <Checkbox
-                                                            checked={roleForm.assignedEmployees.includes(employee.id)}
-                                                            onCheckedChange={(checked) => {
-                                                                if (checked) {
-                                                                    setRoleForm({
-                                                                        ...roleForm,
-                                                                        assignedEmployees: [...roleForm.assignedEmployees, employee.id],
-                                                                    });
-                                                                } else {
-                                                                    setRoleForm({
-                                                                        ...roleForm,
-                                                                        assignedEmployees: roleForm.assignedEmployees.filter(id => id !== employee.id),
-                                                                    });
-                                                                }
-                                                            }}
-                                                        />
-                                                        <Avatar className="h-8 w-8">
-                                                            <AvatarImage src={employee.avatar} alt={employee.name} />
-                                                            <AvatarFallback>{employee.name.substring(0, 2)}</AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex-1">
-                                                            <div className="font-medium text-sm">{employee.name}</div>
-                                                            <div className="text-xs text-muted-foreground">{employee.department} • {employee.position}</div>
-                                                        </div>
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium">Permissions</label>
-                                        <div className="max-h-60 overflow-y-auto border rounded-lg p-4 space-y-4">
-                                            {Object.entries(groupedPermissions).map(([resource, perms]) => (
-                                                <div key={resource} className="space-y-2">
-                                                    <h4 className="font-medium capitalize">{resource}</h4>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                                        {perms.map((permission) => (
-                                                            <label key={permission.id} className="flex items-center space-x-2">
-                                                                <Checkbox
-                                                                    checked={roleForm.permissions.includes(permission.id)}
-                                                                    onCheckedChange={(checked) => {
-                                                                        if (checked) {
-                                                                            setRoleForm({
-                                                                                ...roleForm,
-                                                                                permissions: [...roleForm.permissions, permission.id],
-                                                                            });
-                                                                        } else {
-                                                                            setRoleForm({
-                                                                                ...roleForm,
-                                                                                permissions: roleForm.permissions.filter(id => id !== permission.id),
-                                                                            });
-                                                                        }
-                                                                    }}
-                                                                />
-                                                                <span className="text-sm">{permission.name}</span>
-                                                            </label>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <Checkbox
-                                            checked={roleForm.isActive}
-                                            onCheckedChange={(checked) => setRoleForm({ ...roleForm, isActive: checked as boolean })}
-                                        />
-                                        <label className="text-sm font-medium">Active Role</label>
-                                    </div>
-                                    <div className="flex justify-end gap-4">
-                                        <Button variant="outline" onClick={() => setShowRoleDialog(false)}>
-                                            Cancel
-                                        </Button>
-                                        <Button onClick={handleRoleSubmit}>
-                                            {editingRole ? "Update Role" : "Create Role"}
-                                        </Button>
-                                    </div>
-                                </div>
-                            </DialogContent>
-                        </Dialog>
+                        <Button onClick={handleAddRole} className="w-full md:w-auto">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Role
+                        </Button>
                     </div>
 
                     {/* Roles Table */}
+                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-900 space-y-2">
+                    <p className="font-semibold">Note:</p>
+                    <ul className="list-disc pl-5 space-y-1">
+                        <li>
+                        <strong>Eye Icon #1</strong> (color: <code>&lt;black&gt;</code>):  
+                        Opens a modal (<code>&lt;DialogContent&gt;</code>) to show inline role details <strong>without navigating</strong> away from the page.
+                        </li>
+                        <li>
+                        <strong>Eye Icon #2</strong> (color: <code>&lt;blue&gt;</code>):  
+                        Navigates to a <strong> role details page</strong>.
+                        </li>
+                    </ul>
+                    </div>
+
                     <div className="rounded-md border overflow-hidden">
                         <div className="overflow-x-auto">
                             <Table>
@@ -424,7 +169,7 @@ export default function RBACPage() {
                                         <TableHead className="min-w-[150px]">Role Name</TableHead>
                                         <TableHead className="hidden md:table-cell min-w-[200px]">Description</TableHead>
                                         <TableHead className="hidden xl:table-cell">Permissions</TableHead>
-                                        <TableHead className="min-w-[200px]">Assigned Employees</TableHead>
+                                        <TableHead className="hidden min-w-[200px]">Assigned Employees</TableHead>
                                         <TableHead className="hidden md:table-cell">Status</TableHead>
                                         <TableHead className="w-[120px]">Actions</TableHead>
                                     </TableRow>
@@ -440,11 +185,10 @@ export default function RBACPage() {
                                                         <div className="md:hidden text-sm text-muted-foreground mt-1">
                                                             {role.description}
                                                         </div>
-
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="hidden md:table-cell">
-                                                    <div className="max-w-[200px] truncate" title={role.description}>
+                                                    <div className="max-w-[200px]" title={role.description}>
                                                         {role.description}
                                                     </div>
                                                 </TableCell>
@@ -466,19 +210,17 @@ export default function RBACPage() {
                                                         )}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="hidden md:table-cell">
                                                     <div className="space-y-2">
                                                         <div className="flex flex-wrap gap-1">
                                                             {assignedEmployees.slice(0, 2).map((empId: string) => {
                                                                 const employee = getEmployeeById(empId);
                                                                 return employee ? (
-                                                                    <div key={empId} className="flex items-center gap-1 bg-muted/50 rounded px-2 py-1">
-                                                                        <Avatar className="h-5 w-5">
-                                                                            <AvatarImage src={employee.avatar} alt={employee.name} />
-                                                                            <AvatarFallback className="text-xs">{employee.name.substring(0, 2)}</AvatarFallback>
-                                                                        </Avatar>
-                                                                        <span className="text-xs">{employee.name.split(' ')[0]}</span>
-
+                                                                    <div
+                                                                        key={empId}
+                                                                        className="text-sm bg-muted/50 rounded px-2 py-1"
+                                                                    >
+                                                                        {employee.name}
                                                                     </div>
                                                                 ) : null;
                                                             })}
@@ -488,17 +230,9 @@ export default function RBACPage() {
                                                                 </Badge>
                                                             )}
                                                         </div>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            className="text-xs h-7"
-                                                            onClick={() => handleAssignEmployees(role)}
-                                                        >
-                                                            <Users className="h-3 w-3 mr-1" />
-                                                            Manage
-                                                        </Button>
                                                     </div>
                                                 </TableCell>
+
                                                 <TableCell className="hidden md:table-cell">
                                                     <Badge variant={role.isActive ? "default" : "secondary"}>
                                                         {role.isActive ? "Active" : "Inactive"}
@@ -511,14 +245,15 @@ export default function RBACPage() {
                                                                 <Button variant="ghost" size="icon" onClick={() => setSelectedRole(role)}>
                                                                     <Eye className="h-4 w-4" />
                                                                 </Button>
+
                                                             </DialogTrigger>
-                                                            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                                                            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                                                                 <DialogHeader>
-                                                                    <DialogTitle>Role Details: {selectedRole?.name}</DialogTitle>
+                                                                    <DialogTitle>Role Details</DialogTitle>
                                                                 </DialogHeader>
                                                                 {selectedRole && (
                                                                     <div className="space-y-4">
-                                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                                             <div>
                                                                                 <h4 className="font-medium mb-2">Basic Information</h4>
                                                                                 <div className="space-y-2 text-sm">
@@ -540,10 +275,10 @@ export default function RBACPage() {
                                                                                     const employee = getEmployeeById(empId);
                                                                                     return employee ? (
                                                                                         <div key={empId} className="flex items-center gap-2 p-2 border rounded">
-                                                                                            <Avatar className="h-8 w-8">
+                                                                                            {/* <Avatar className="h-8 w-8">
                                                                                                 <AvatarImage src={employee.avatar} alt={employee.name} />
                                                                                                 <AvatarFallback>{employee.name.substring(0, 2)}</AvatarFallback>
-                                                                                            </Avatar>
+                                                                                            </Avatar> */}
                                                                                             <div>
                                                                                                 <div className="text-sm font-medium">{employee.name}</div>
                                                                                                 <div className="text-xs text-muted-foreground">{employee.department}</div>
@@ -554,10 +289,9 @@ export default function RBACPage() {
                                                                             </div>
                                                                         </div>
 
-
                                                                         <div>
                                                                             <h4 className="font-medium mb-2">Permissions ({selectedRole.permissions.length})</h4>
-                                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                                                                                 {selectedRole.permissions.map((permId) => {
                                                                                     const permission = permissions.find(p => p.id === permId);
                                                                                     return permission ? (
@@ -575,6 +309,13 @@ export default function RBACPage() {
                                                                 )}
                                                             </DialogContent>
                                                         </Dialog>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => router.push(`/rbac/view-role?id=${role.id}`)}
+                                                        >
+                                                            <Eye className="h-4 w-4 text-blue-500" />
+                                                        </Button>
                                                         <Button variant="ghost" size="icon" onClick={() => handleEditRole(role)}>
                                                             <Edit className="h-4 w-4" />
                                                         </Button>
@@ -621,71 +362,7 @@ export default function RBACPage() {
                         </div>
                     )}
                 </TabsContent>
-
-
             </Tabs>
-
-            {/* Employee Assignment Dialog */}
-            <Dialog open={showEmployeeAssignment} onOpenChange={setShowEmployeeAssignment}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>Manage Employee Assignments - {assigningToRole?.name}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <div className="flex flex-col md:flex-row gap-4">
-                            <div className="relative flex-1">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search employees..."
-                                    className="pl-10"
-                                    value={employeeSearchTerm}
-                                    onChange={(e) => setEmployeeSearchTerm(e.target.value)}
-                                />
-                            </div>
-                            <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                                <SelectTrigger className="w-full md:w-[200px]">
-                                    <SelectValue placeholder="Filter by department" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Departments</SelectItem>
-                                    {departments.map((dept) => (
-                                        <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="max-h-96 overflow-y-auto space-y-2">
-                            {filteredEmployees.map((employee) => {
-                                const isAssigned = assigningToRole && ((assigningToRole as any).assignedEmployees || []).includes(employee.id);
-                                return (
-                                    <label key={employee.id} className="flex items-center space-x-3 p-3 hover:bg-muted/50 rounded border">
-                                        <Checkbox
-                                            checked={isAssigned}
-                                            onCheckedChange={(checked) => handleEmployeeAssignment(employee.id, checked as boolean)}
-                                        />
-                                        <Avatar className="h-10 w-10">
-                                            <AvatarImage src={employee.avatar} alt={employee.name} />
-                                            <AvatarFallback>{employee.name.substring(0, 2)}</AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex-1">
-                                            <div className="font-medium">{employee.name}</div>
-                                            <div className="text-sm text-muted-foreground">{employee.email}</div>
-                                            <div className="text-xs text-muted-foreground">{employee.department} • {employee.position}</div>
-                                        </div>
-                                    </label>
-                                );
-                            })}
-                        </div>
-
-                        <div className="flex justify-end">
-                            <Button onClick={() => setShowEmployeeAssignment(false)}>
-                                Done
-                            </Button>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
         </div>
     );
 }

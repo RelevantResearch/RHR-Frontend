@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from '@/components/ui/checkbox';
 import { TimeEntry } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { BreadcrumbNavigation } from '@/components/ui/breadcrumbs-navigation';
 
 // Single sample entry
 const sampleTimeEntry: TimeEntry = {
@@ -140,11 +141,8 @@ export default function AdminTimesheetsPage() {
 
   return (
     <div className="container">
-      <div className="flex items-center gap-4 mb-6 md:mb-8">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Timesheet Management</h1>
-        </div>
-      </div>
+      <BreadcrumbNavigation/>
+      
 
       {/* Mobile Filters */}
       <div className="flex flex-wrap items-center gap-4 mb-6">

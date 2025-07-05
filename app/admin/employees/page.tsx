@@ -50,6 +50,7 @@ import { cn } from '@/lib/utils';
 import { useDepartments } from "@/hooks/useDepartments";
 import { usePagination } from '@/hooks/usePagination';
 import CustomSelect from '@/components/CustomSelect';
+import { BreadcrumbNavigation } from '@/components/ui/breadcrumbs-navigation';
 
 
 const emptyuserForm: userForm = {
@@ -223,6 +224,7 @@ export default function EmployeesPage() {
 
   return (
     <div className="space-y-6">
+      <BreadcrumbNavigation/>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl md:text-3xl font-bold">Employees</h1>
         <Button onClick={() => {

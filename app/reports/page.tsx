@@ -15,6 +15,7 @@ import {
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO, subMonths, subWeeks } from 'date-fns';
 import { toast } from 'sonner';
 import { Textarea } from "@/components/ui/textarea";
+import { BreadcrumbNavigation } from "@/components/ui/breadcrumbs-navigation";
 
 interface WeeklyReport {
   id: string;
@@ -291,6 +292,7 @@ export default function ReportsPage() {
 
   return (
     <div className="container mx-auto">
+      <BreadcrumbNavigation/>
       <div className="mb-8">
         <div className="flex items-center gap-4">
           <div>

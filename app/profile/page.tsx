@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { User, Upload, Camera, Building2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { BreadcrumbNavigation } from "@/components/ui/breadcrumbs-navigation";
 
 interface ProfileData {
   name: string;
@@ -137,6 +138,7 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto py-8">
+      <BreadcrumbNavigation/>
       <div className="flex items-center gap-4 mb-8">
         <User className="h-8 w-8 text-primary" />
         <div>

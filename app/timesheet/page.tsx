@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { BreadcrumbNavigation } from '@/components/ui/breadcrumbs-navigation';
 
 
 const projects = [
@@ -208,6 +209,7 @@ export default function TimesheetPage() {
 
   return (
     <div className="container mx-auto">
+      <BreadcrumbNavigation/>
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <div>
