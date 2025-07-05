@@ -22,7 +22,6 @@ interface BreadcrumbNavigationProps {
   };
 }
 
-// ⛳️ Renamed to avoid name conflict
 const generateDefaultBreadcrumbs = (
   pathname: string,
   searchParams?: URLSearchParams,
@@ -67,7 +66,6 @@ const generateDefaultBreadcrumbs = (
       label = `Edit Role`;
     }
 
-    // 🔒 Disable navigation for specific segments
     const nonNavigableSegments = ['admin'];
 
     breadcrumbs.push({
@@ -137,7 +135,6 @@ export function BreadcrumbNavigation({ items, className, dynamicData }: Breadcru
   );
 }
 
-// ✅ Use renamed function
 export function useBreadcrumbs() {
   const pathname = usePathname() ?? '';
   const rawSearchParams = useSearchParams();

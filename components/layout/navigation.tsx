@@ -20,9 +20,7 @@ import {
   Menu,
   Calendar,
   Shield,
-  Plus,
   ChevronDown,
-  Edit,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -46,19 +44,11 @@ interface NavigationProps {
   children: React.ReactNode;
 }
 
-interface NavLink {
-  href: string;
-  label: string;
-  icon: any;
-  subItems?: NavLink[];
-}
-
 export default function Navigation({ children }: NavigationProps) {
   const { user, logout, isLoading } = useAuth();
-  const pathname = usePathname();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotificationStore();
-  // const pathname = usePathname();
+  const pathname = usePathname();
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -100,26 +90,6 @@ export default function Navigation({ children }: NavigationProps) {
     router.push('/');
   };
 
-  const getProjectSubItems = (): NavLink[] => {
-    const subItems: NavLink[] = [];
-    
-    if (pathname === '/projects/add') {
-      subItems.push({
-        href: '/projects/add',
-        label: 'Add Project',
-        icon: Plus,
-      });
-    } else if (pathname.startsWith('/projects/edit')) {
-      subItems.push({
-        href: pathname,
-        label: 'Edit Project',
-        icon: Edit,
-      });
-    }
-    
-    return subItems;
-  };
-
   const roleName = user.role.name.toLowerCase();
 
 
@@ -138,7 +108,6 @@ export default function Navigation({ children }: NavigationProps) {
       href: '/projects',
       label: 'Projects',
       icon: FolderKanban,
-      subItems: getProjectSubItems(),
     },
     {
       href: '/admin/timesheets',
@@ -257,9 +226,6 @@ export default function Navigation({ children }: NavigationProps) {
       {links.map((link) => {
         const Icon = link.icon;
         const showLabel = isMobileSheet || !isCollapsed || isMobile;
-        const isMainActive = pathname === link.href || (link.href === '/projects' && pathname.startsWith('/projects'));
-        const hasSubItems = link.subItems && link.subItems.length > 0;
-        
 
         return (
           <li key={link.href}>
@@ -278,7 +244,7 @@ export default function Navigation({ children }: NavigationProps) {
               {showLabel && <span className={cn(
                 "transition-opacity duration-300 delay-200",
                 isCollapsed ? "opacity-0 invisible absolute" : "opacity-100 visible relative"
-              )}>{link.label}</span>} 
+              )}>{link.label}</span>}
 
 
               {!isMobileSheet && !isMobile && isCollapsed && (
@@ -287,32 +253,6 @@ export default function Navigation({ children }: NavigationProps) {
                 </div>
               )}
             </Link>
-            {/* Sub Navigation Items */}
-            {hasSubItems && showLabel && (
-              <ul className="ml-6 space-y-1">
-                {link.subItems!.map((subItem) => {
-                  const SubIcon = subItem.icon;
-                  const isSubActive = pathname === subItem.href;
-                  
-                  return (
-                    <li key={subItem.href}>
-                      <Link
-                        href={subItem.href}
-                        className={cn(
-                          'flex items-center rounded-lg transition-all duration-200 px-4 py-3 space-x-3 text-sm',
-                          isSubActive
-                            ? 'bg-blue-500 text-white shadow-md'
-                            : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                        )}
-                      >
-                        <SubIcon className="h-4 w-4 flex-shrink-0" />
-                        <span className="font-medium">{subItem.label}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
           </li>
         );
       })}
