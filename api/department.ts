@@ -3,7 +3,7 @@ import axiosInstance from "./axios";
 
 //fetch departments
 export interface DepartmentFromAPI {
-  id: string;
+  id: number;
   name: string;
   description: string;
 }

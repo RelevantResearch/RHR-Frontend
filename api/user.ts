@@ -81,3 +81,4 @@ export const deleteUserApi = async (id: number | string) => {
     throw new Error("Failed to delete user");
   }
 };
+

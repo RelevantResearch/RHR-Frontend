@@ -1,6 +1,8 @@
 'use client';
 
-import { useAuth } from "@/lib/auth-context";
+import { GoSidebarCollapse } from "react-icons/go";
+import Image from 'next/image';
+import { useAuth } from '@/lib/auth-context';
 import { useNotificationStore } from '@/lib/notification-store';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -9,18 +11,16 @@ import {
   Users,
   Clock,
   FileText,
+  KeyRound,
   LogOut,
   LayoutDashboard,
   FolderKanban,
   Building2,
   Settings,
-  ChevronRight,
-  ChevronLeft,
   Menu,
   Calendar,
-  Bell,
-  KeyRound,
   Shield,
+  ChevronDown,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -34,14 +34,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import { format } from 'date-fns';
 import PasswordChange from '@/components/auth/password-change';
-import LoadingOverlayWrapper from '@/components/loading-overlay-wrapper'; 
+import LoadingOverlayWrapper from '@/components/loading-overlay-wrapper';
+
+
 
 interface NavigationProps {
   children: React.ReactNode;
@@ -60,9 +57,6 @@ export default function Navigation({ children }: NavigationProps) {
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth < 768) {
-        setIsCollapsed(true);
-      }
     };
 
     checkMobile();
@@ -194,184 +188,149 @@ export default function Navigation({ children }: NavigationProps) {
 
   const links = roleName === "admin" ? adminLinks : employeeLinks;
 
+  const BrandLogo = () => {
 
-  const NavLinks = () => (
-    <>
-      <div className={cn(
-        "flex flex-col items-center justify-center p-6 border-b border-gray-800 transition-all duration-500",
-        isCollapsed ? "space-y-2" : "space-y-4"
+    const showLabel = !isCollapsed || isMobile;
+
+    return (
+      <span className={cn(
+        "relative flex items-center justify-center transition-opacity duration-300 delay-200 w-12 h-12 mt-4 mb-3",
+        isCollapsed ? "w-12 h-12 mx-auto" : "w-auto"
       )}>
-        <Avatar className={cn(
-          "transition-all duration-500",
-          isCollapsed ? "h-12 w-12" : "h-20 w-20"
-        )}>
-          {/* <AvatarImage src={user?.avatar} alt={user?.name} /> */}
-          <AvatarImage src={user?.avatar ?? undefined} alt={user?.name ?? undefined} />
+        {isCollapsed ? (
+          <Image
+            src="/Relevant Research_Icon_Color.png"
+            alt="Relevant Research Mobile Logo"
+            width={40}
+            height={40}
+            priority
+          />
+        ) : (
+          <Image
+            src="/Relevant Research_HZ_Color.png"
+            alt="Relevant Research Desktop Logo"
+            width={180}
+            height={60}
+            priority
+          />
+        )}
+      </span>
+    );
+  };
 
-          <AvatarFallback className={cn(
-            "transition-all duration-500",
-            isCollapsed ? "text-base" : "text-2xl"
-          )}>
-            {user?.name?.charAt(0).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <div className={cn(
-          "text-center transition-all duration-300 delay-200",
-          isCollapsed ? "opacity-0 invisible absolute" : "opacity-100 visible relative"
-        )}>
-          <h3 className="font-medium text-lg text-white">{user?.name}</h3>
-          <p className="text-sm text-gray-400">{user?.email}</p>
-          <div className="mt-2 text-sm text-gray-500">
-            <p>{user?.position}</p>
-            <p>{user?.department}</p>
-          </div>
-        </div>
-      </div>
-      <ul className="flex-1 space-y-2 p-4">
-        {links.map((link) => {
-          const Icon = link.icon;
-          return (
-            <li key={link.href}>
-              <Link
-                href={link.href}
-                className={cn(
-                  'flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors whitespace-nowrap overflow-hidden',
-                  pathname === link.href
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                )}
-              >
-                <Icon className="h-5 w-5 flex-shrink-0" />
-                <span className={cn(
-                  "transition-opacity duration-300 delay-200",
-                  isCollapsed ? "opacity-0 invisible absolute" : "opacity-100 visible relative"
-                )}>{link.label}</span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </>
-  );
+  const NavLinks = ({ isMobileSheet = false }: { isMobileSheet?: boolean }) => (
+    <ul className={cn(
+      "flex-1 space-y-2 transition-all duration-500 delay-200 py-4",
+      !isMobileSheet && !isMobile && isCollapsed ? "px-2" : "px-4"
+    )}>
+      {links.map((link) => {
+        const Icon = link.icon;
+        const showLabel = isMobileSheet || !isCollapsed || isMobile;
 
-  const NotificationBell = () => (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              {unreadCount}
-            </span>
-          )}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80" align="end">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold">Notifications</h3>
-          {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => markAllAsRead()}
+        return (
+          <li key={link.href}>
+            <Link
+              href={link.href}
+              className={cn(
+                'flex items-center rounded-lg transition-all group relative overflow-hidden',
+                !isMobileSheet && !isMobile && isCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3 space-x-3',
+                pathname === link.href
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+              )}
+              title={!isMobileSheet && !isMobile && isCollapsed ? link.label : undefined}
             >
-              Mark all as read
-            </Button>
-          )}
-        </div>
-        <div className="space-y-4 max-h-[300px] overflow-auto">
-          {notifications
-            .filter(n => !n.targetUserId || n.targetUserId === user?.id)
-            .slice(0, 5)
-            .map((notification) => (
-              <div
-                key={notification.id}
-                className={cn(
-                  'p-3 rounded-lg cursor-pointer',
-                  notification.read ? 'bg-muted/50' : 'bg-muted'
-                )}
-                onClick={() => !notification.read && markAsRead(notification.id)}
-              >
-                <p className="font-medium">
-                  {notification.message || (
-                    `${notification.employeeName} submitted a ${notification.type === 'leave_request'
-                      ? 'leave request'
-                      : notification.type === 'ticket'
-                        ? 'support ticket'
-                        : 'weekly report'
-                    }`
-                  )}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {format(new Date(notification.timestamp), 'PPp')}
-                </p>
-              </div>
-            ))}
-          {notifications.length === 0 && (
-            <p className="text-center text-muted-foreground py-4">
-              No notifications
-            </p>
-          )}
-          {notifications.length > 5 && (
-            <Button
-              variant="ghost"
-              className="w-full"
-              onClick={() => router.push('/notifications')}
-            >
-              View All
-            </Button>
-          )}
-        </div>
-      </PopoverContent>
-    </Popover>
+              <Icon className="h-5 w-5 flex-shrink-0" />
+              {showLabel && <span className={cn(
+                "transition-opacity duration-300 delay-200",
+                isCollapsed ? "opacity-0 invisible absolute" : "opacity-100 visible relative"
+              )}>{link.label}</span>}
+
+
+              {!isMobileSheet && !isMobile && isCollapsed && (
+                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200  delay-200 pointer-events-none whitespace-nowrap z-50">
+                  {link.label}
+                </div>
+              )}
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
   );
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b z-50 px-4">
-        <div className="flex items-center justify-between h-full">
-          <div className="flex items-center gap-2">
-            {isMobile ? (
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-80 p-0 bg-gray-900">
-                  <div className="flex flex-col h-full">
-                    <NavLinks />
-                  </div>
-                </SheetContent>
-              </Sheet>
-            ) : (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsCollapsed(!isCollapsed)}
-              >
-                {isCollapsed ? (
-                  <ChevronRight className="h-4 w-4" />
-                ) : (
-                  <ChevronLeft className="h-4 w-4" />
-                )}
-              </Button>
-            )}
-            <h1 className="text-xl font-bold">Relevant Research</h1>
+    <div className="min-h-screen flex">
+
+      {!isMobile && (
+        <nav className={cn(
+          "fixed top-0 left-0 bottom-0 bg-gray-900 text-white z-50 transition-all duration-500",
+          isCollapsed ? "w-20" : "w-72"
+        )}>
+          <div className="flex flex-col h-full ">
+            <BrandLogo />
+            <NavLinks />
           </div>
-          <div className="flex items-center gap-4">
-            <NotificationBell />
+        </nav>
+      )}
+
+
+      <div className={cn(
+        "flex-1 transition-all duration-500",
+        !isMobile && (isCollapsed ? "ml-16" : "ml-72")
+      )}>
+
+        <header className="bg-white border-b border-gray-200 px-6 py-2 sticky top-0 z-40">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+
+              {!isMobile && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsCollapsed(!isCollapsed)}
+                  className="hover:bg-gray-100"
+                >
+                  <GoSidebarCollapse
+                    className={`h-7 w-7 transform transition-transform duration-300 ${isCollapsed ? "scale-x-100" : "scale-x-[-1]"
+                      }`}
+                  />
+                </Button>
+              )}
+
+              {isMobile && (
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Menu className="h-5 w-5" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-64 p-0 bg-gray-900">
+                    <div className="flex flex-col h-full py-6">
+                      <BrandLogo />
+                      <NavLinks isMobileSheet={true} />
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              )}
+
+              <h1 className="text-2xl font-bold text-gray-900">HRMS</h1>
+            </div>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    {/* <AvatarImage src={user?.avatar} alt={user?.name} /> */}
+                <Button variant="ghost" className="flex items-center gap-3 hover:bg-gray-50 px-3 py-2 h-auto">
+                  <Avatar className="h-10 w-10">
                     <AvatarImage src={user?.avatar ?? undefined} alt={user?.name ?? undefined} />
-
-                    <AvatarFallback>
+                    <AvatarFallback className="bg-blue-600 text-white font-semibold">
                       {user?.name?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
+                  <div className="text-left hidden sm:block">
+                    <p className="text-sm font-semibold text-gray-900">{user?.name}</p>
+                    <p className="text-xs text-gray-500">{user?.email}</p>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-gray-500 transition-transform duration-200" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -402,38 +361,19 @@ export default function Navigation({ children }: NavigationProps) {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {!isMobile && (
-        <nav
-          className={cn(
-            "fixed top-16 left-0 bottom-0 bg-gray-900 text-white transition-all duration-500",
-            isCollapsed ? "w-24" : "w-80"
-          )}
-        >
-          <div className="flex flex-col h-full">
-            <NavLinks />
+        <main className="bg-gray-50 min-h-[calc(100vh-73px)]">
+          <div className="container mx-auto p-6">
+            {children}
           </div>
-        </nav>
-      )}
-
-      <main
-        className={cn(
-          "flex-1 pt-16 transition-all duration-500",
-          !isMobile && (isCollapsed ? "ml-24" : "ml-80")
-        )}
-      >
-        <div className="container mx-auto p-4 md:p-8">
-          {children}
-        </div>
-      </main>
-
-      <PasswordChange
-        isOpen={showPasswordChange}
-        onClose={() => setShowPasswordChange(false)}
-        email={user?.email || ''}
-      />
+        </main>
+        <PasswordChange
+          isOpen={showPasswordChange}
+          onClose={() => setShowPasswordChange(false)}
+          email={user?.email || ''}
+        />
+      </div>
     </div>
   );
 }

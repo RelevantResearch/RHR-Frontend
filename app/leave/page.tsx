@@ -6,7 +6,6 @@ import { useLeaveStore } from '@/lib/leave-store';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Calendar, Clock, FileText } from 'lucide-react';
 import { useLeaveTypes } from '@/hooks/useLeaveTypes';
 import {
   Dialog,
@@ -89,37 +88,11 @@ export default function LeavePage() {
   };
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto">
       <div className="flex items-center gap-4 mb-8">
-        <Calendar className="h-8 w-8 text-primary" />
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Leave Management</h1>
-          <p className="text-muted-foreground">Request and track your leave</p>
         </div>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Annual Leave Balance</CardTitle>
-            <CardDescription>10% of total hours worked</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">{leaveBalance.annual}h</p>
-            <p className="text-sm text-muted-foreground">Available hours</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Personal Leave Balance</CardTitle>
-            <CardDescription>5% of total hours worked</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">{leaveBalance.personal}h</p>
-            <p className="text-sm text-muted-foreground">Available hours</p>
-          </CardContent>
-        </Card>
       </div>
 
       <div className="mt-8 flex justify-between items-center">

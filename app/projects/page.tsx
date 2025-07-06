@@ -1,633 +1,611 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useProjects } from "@/hooks/useProjects";
-import { Textarea } from "@/components/ui/textarea";
-import { FolderKanban, Plus, Calendar, Users, Clock, Eye, Trash2, Archive, ChevronLeft, ChevronRight, Search, Check, X } from "lucide-react";
+import { DataTable, Column } from '@/components/ui/data-table';
+import { DataFilters, FilterGroup } from '@/components/ui/data-filters';
+import { ActionButtons, commonActions, ActionButton } from '@/components/ui/action-buttons';
+import { PageHeader } from '@/components/ui/page-header';
+import { useTableState, useFilteredData } from '@/hooks/use-table-state';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Plus, FolderKanban, Calendar, DollarSign, Users, Eye, Edit, Archive, Mail, Phone, Building2, ArrowLeft } from 'lucide-react';
+import { format } from 'date-fns';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { toast } from "sonner";
-import { useAuth } from '@/lib/auth-context';
-import { cn } from "@/lib/utils";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { BreadcrumbNavigation } from '@/components/ui/breadcrumbs-navigation';
+
+interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  email: string;
+  phone: string;
+  avatar?: string;
+}
 
 interface Project {
   id: string;
   name: string;
-  description: string;
   clientName: string;
-  budget: number;
+  description: string;
   department: string;
+  budget: number;
+  status: 'planning' | 'active' | 'on-hold' | 'completed' | 'cancelled' | 'archived';
   startDate: string;
-  endDate: string;
-  status: 'active' | 'archived';
-  assignedEmployees: string[];
+  endDate?: string;
+  deadline: string;
+  assignedTeamMembers: TeamMember[];
+  progress: number;
 }
 
-
-const demoProjects: Project[] = [
+const sampleProjects: Project[] = [
   {
     id: '1',
     name: 'E-commerce Platform Redesign',
-    description: 'Complete overhaul of the existing e-commerce platform with modern UI/UX principles, improved performance, and enhanced security features.',
-    clientName: 'TechRetail Solutions',
-    budget: 85000,
+    clientName: 'TechCorp Solutions',
+    description: 'Complete redesign of the e-commerce platform with modern UI/UX and improved performance. This project involves updating the entire frontend architecture, implementing new design systems, and optimizing backend performance for better user experience.',
     department: 'Web Development',
-    startDate: '2024-03-01',
-    endDate: '2024-08-31',
+    budget: 75000,
     status: 'active',
-    assignedEmployees: ['1', '2', '3']
+    startDate: '2024-01-15',
+    endDate: '2024-06-30',
+    deadline: '2024-06-30',
+    assignedTeamMembers: [
+      { 
+        id: '1', 
+        name: 'John Smith', 
+        role: 'Project Lead', 
+        email: 'john.smith@company.com',
+        phone: '+1 (555) 123-4567',
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=256&h=256&fit=crop&crop=faces' 
+      },
+      { 
+        id: '2', 
+        name: 'Jane Doe', 
+        role: 'Frontend Developer', 
+        email: 'jane.doe@company.com',
+        phone: '+1 (555) 234-5678',
+        avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=256&h=256&fit=crop&crop=faces' 
+      },
+      { 
+        id: '3', 
+        name: 'Mike Johnson', 
+        role: 'Backend Developer', 
+        email: 'mike.johnson@company.com',
+        phone: '+1 (555) 345-6789',
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=256&h=256&fit=crop&crop=faces' 
+      },
+    ],
+    progress: 65,
   },
   {
     id: '2',
     name: 'Data Analytics Dashboard',
-    description: 'Development of a comprehensive analytics dashboard with real-time data visualization, custom reporting, and predictive analytics capabilities.',
-    clientName: 'Analytics Corp',
-    budget: 65000,
+    clientName: 'Analytics Inc',
+    description: 'Development of a comprehensive data analytics dashboard for business intelligence. Features include real-time data visualization, custom reporting tools, and advanced analytics capabilities.',
     department: 'Data Analysis',
-    startDate: '2024-04-01',
-    endDate: '2024-07-31',
-    status: 'active',
-    assignedEmployees: ['2', '3']
-  }
+    budget: 45000,
+    status: 'planning',
+    startDate: '2024-03-01',
+    deadline: '2024-08-15',
+    assignedTeamMembers: [
+      { 
+        id: '4', 
+        name: 'Sarah Wilson', 
+        role: 'Data Scientist', 
+        email: 'sarah.wilson@company.com',
+        phone: '+1 (555) 456-7890',
+        avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=256&h=256&fit=crop&crop=faces' 
+      },
+      { 
+        id: '5', 
+        name: 'David Brown', 
+        role: 'Data Analyst', 
+        email: 'david.brown@company.com',
+        phone: '+1 (555) 567-8901',
+        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=256&h=256&fit=crop&crop=faces' 
+      },
+    ],
+    progress: 25,
+  },
+  {
+    id: '3',
+    name: 'Community Outreach Program',
+    clientName: 'Local Government',
+    description: 'Digital platform for community engagement and public service delivery. Includes citizen portal, service request management, and community feedback systems.',
+    department: 'Public Impact',
+    budget: 30000,
+    status: 'completed',
+    startDate: '2023-09-01',
+    endDate: '2024-02-28',
+    deadline: '2024-02-28',
+    assignedTeamMembers: [
+      { 
+        id: '6', 
+        name: 'Emily Davis', 
+        role: 'Program Manager', 
+        email: 'emily.davis@company.com',
+        phone: '+1 (555) 678-9012',
+        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=256&h=256&fit=crop&crop=faces' 
+      },
+      { 
+        id: '7', 
+        name: 'Alex Chen', 
+        role: 'Community Coordinator', 
+        email: 'alex.chen@company.com',
+        phone: '+1 (555) 789-0123',
+        avatar: 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?w=256&h=256&fit=crop&crop=faces' 
+      },
+    ],
+    progress: 100,
+  },
+  {
+    id: '4',
+    name: 'Mobile App Development',
+    clientName: 'StartupXYZ',
+    description: 'Cross-platform mobile application for task management and productivity. Features include task scheduling, team collaboration, and progress tracking.',
+    department: 'Web Development',
+    budget: 60000,
+    status: 'on-hold',
+    startDate: '2024-02-01',
+    deadline: '2024-09-30',
+    assignedTeamMembers: [
+      { 
+        id: '8', 
+        name: 'Tom Anderson', 
+        role: 'Mobile Developer', 
+        email: 'tom.anderson@company.com',
+        phone: '+1 (555) 890-1234',
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=256&h=256&fit=crop&crop=faces' 
+      },
+    ],
+    progress: 40,
+  },
 ];
 
 const departments = ['Web Development', 'Data Analysis', 'Public Impact'];
-
-const mockEmployees = [
-  { id: '1', name: 'John Admin', department: 'Web Development', role: 'Senior Developer' },
-  { id: '2', name: 'Jane Employee', department: 'Data Analysis', role: 'Data Analyst' },
-  { id: '3', name: 'Mike Johnson', department: 'Public Impact', role: 'Project Manager' },
-  { id: '4', name: 'Sarah Wilson', department: 'Web Development', role: 'Frontend Developer' },
-  { id: '5', name: 'David Brown', department: 'Data Analysis', role: 'Data Scientist' },
-  { id: '6', name: 'Emily Davis', department: 'Public Impact', role: 'Community Manager' },
-];
+const statuses = ['planning', 'active', 'on-hold', 'completed', 'cancelled', 'archived'];
 
 export default function ProjectsPage() {
-  const { user } = useAuth();
-  const { projects, loading, error, archiveProject, deleteProject, addProject, refetch } = useProjects();
-  const [newProject, setNewProject] = useState({
-    name: '',
-    description: '',
-    clientName: '',
-    budget: '',
-    department: 'Web Development',
-    startDate: '',
-    endDate: '',  // <-- use endDate here
-    assignedEmployees: [] as string[],
-  });
+  const router = useRouter();
+  const [projects, setProjects] = useState<Project[]>(sampleProjects);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [departmentFilter, setDepartmentFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [employeeSearch, setEmployeeSearch] = useState('');
-  const [employeePopoverOpen, setEmployeePopoverOpen] = useState(false);
-  const [selectedDepartmentFilter, setSelectedDepartmentFilter] = useState<string | null>(null);
-
-  const filteredEmployees = mockEmployees
-    .filter(emp => 
-      (!selectedDepartmentFilter || emp.department === selectedDepartmentFilter) &&
-      (emp.name.toLowerCase().includes(employeeSearch.toLowerCase()) ||
-       emp.role.toLowerCase().includes(employeeSearch.toLowerCase()))
-    );
-
-    const handleAddProject = () => {
-      if (
-        !newProject.name ||
-        !newProject.description ||
-        !newProject.clientName ||
-        !newProject.budget ||
-        !newProject.startDate ||
-        !newProject.endDate  // check endDate, not deadline
-      ) {
-        toast.error("Please fill in all required fields");
-        return;
-      }
+  const [showViewDialog, setShowViewDialog] = useState(false);
   
-      addProject({
-        name: newProject.name,
-        description: newProject.description,
-        clientName: newProject.clientName,
-        budget: parseFloat(newProject.budget),
-        department: newProject.department,
-        startDate: newProject.startDate,
-        endDate: newProject.endDate,
-        assignedEmployees: newProject.assignedEmployees,
-      });
-  
-      setNewProject({
-        name: '',
-        description: '',
-        clientName: '',
-        budget: '',
-        department: 'Web Development',
-        startDate: '',
-        endDate: '',
-        assignedEmployees: [],
-      });
-    };
+  const {
+    state,
+    setCurrentPage,
+    setSearchTerm,
+    setFilter,
+    clearFilters,
+    setSort,
+  } = useTableState({
+    initialPageSize: 10,
+    initialFilters: { department: 'all', status: 'all' },
+  });
 
-  const handleDeleteProject = (id: string) => {
-    deleteProject(id); // ✅ use the function from useProjects
-    toast.success('Project deleted successfully');
+  // Filter configuration
+  const filterGroups: FilterGroup[] = [
+    {
+      key: 'department',
+      label: 'Department',
+      options: departments.map(dept => ({
+        key: dept.toLowerCase().replace(/\s+/g, '-'),
+        label: dept,
+        value: dept,
+      })),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      options: statuses.map(status => ({
+        key: status,
+        label: status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' '),
+        value: status,
+      })),
+    },
+  ];
+
+  // Custom filter function
+  const customFilter = (project: Project, filters: Record<string, string | string[]>) => {
+    const { department, status } = filters;
+    
+    if (department && department !== 'all' && project.department !== department) {
+      return false;
+    }
+    
+    if (status && status !== 'all' && project.status !== status) {
+      return false;
+    }
+    
+    return true;
   };
 
+  // Get filtered data
+  const filteredProjects = useFilteredData(
+    projects,
+    state,
+    ['name', 'clientName', 'description', 'department'],
+    customFilter
+  );
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'planning':
+        return 'bg-blue-100 text-blue-800';
+      case 'on-hold':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'completed':
+        return 'bg-purple-100 text-purple-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      case 'archived':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleViewProject = (project: Project) => {
+    setSelectedProject(project);
+    setShowViewDialog(true);
+  };
+
+  
+
+  const handleManageProject = (id: string) => {
+    router.push('/projects/edit');
+  };
 
   const handleArchiveProject = (id: string) => {
-    archiveProject(id); // ✅ use the function from useProjects
+    setProjects(prev => prev.map(project => 
+      project.id === id ? { ...project, status: 'archived' as const } : project
+    ));
     toast.success('Project archived successfully');
   };
 
+  // Table columns configuration
+  const columns: Column<Project>[] = [
+    {
+      key: 'name',
+      header: 'Project Name',
+      className: 'min-w-[200px]',
+      sortable: true,
+      render: (project) => (
+        <div className="space-y-1">
+          <div className="font-medium text-sm md:text-base truncate">{project.name}</div>
+          <div className="text-xs md:text-sm text-gray-500 truncate">{project.clientName}</div>
+          {/* Show department on mobile */}
+          <div className="md:hidden text-xs text-gray-500">{project.department}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'department',
+      header: 'Department',
+      responsive: 'md',
+      sortable: true,
+      render: (project) => (
+        <span className="text-sm">{project.department}</span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      responsive: 'sm',
+      render: (project) => (
+        <Badge className={`${getStatusColor(project.status)} text-xs`}>
+          {project.status.charAt(0).toUpperCase() + project.status.slice(1).replace('-', ' ')}
+        </Badge>
+      ),
+    },
+    {
+      key: 'budget',
+      header: 'Budget',
+      responsive: 'lg',
+      sortable: true,
+      render: (project) => (
+        <span className="text-sm font-medium">${project.budget.toLocaleString()}</span>
+      ),
+    },
+    {
+      key: 'assignedTeamMembers',
+      header: 'Team Size',
+      responsive: 'md',
+      render: (project) => (
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-gray-500" />
+          <span className="font-medium text-sm">{project.assignedTeamMembers.length}</span>
+          <span className="text-xs text-gray-500 hidden lg:inline">
+            {project.assignedTeamMembers.length === 1 ? 'member' : 'members'}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'deadline',
+      header: 'Deadline',
+      responsive: 'lg',
+      sortable: true,
+      render: (project) => (
+        <span className="text-sm">{format(new Date(project.deadline), 'MMM dd, yyyy')}</span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (project) => {
+        const actions: ActionButton[] = [
+          {
+            label: 'View',
+            onClick: () => handleViewProject(project),
+            icon: Eye,
+            variant: 'ghost',
+          },
+          {
+            label: 'Manage',
+            onClick: () => handleManageProject(project.id),
+            icon: Edit,
+            variant: 'ghost',
+          },
+          {
+            label: 'Archive',
+            onClick: () => {},
+            icon: Archive,
+            variant: 'ghost',
+            className: 'text-orange-600 hover:text-orange-700',
+            renderCustom: () => (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-orange-600 hover:text-orange-700">
+                    <Archive className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="max-w-md mx-4">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Archive Project</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to archive "{project.name}"? This will move the project to archived status and it won't appear in active project lists.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-orange-500 hover:bg-orange-600"
+                      onClick={() => handleArchiveProject(project.id)}
+                    >
+                      Archive Project
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ),
+          },
+        ];
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+        return <ActionButtons actions={actions} />;
+      },
+    },
+  ];
+
+  const handleAddProject = () => {
+    router.push('/projects/add');
   };
 
-  const filteredProjects = projects.filter(project => {
-    const matchesDepartment = departmentFilter === 'all' || project.department === departmentFilter;
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.clientName.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesDepartment && matchesStatus && matchesSearch;
-  });
-
-  const projectsPerPage = 10;
-  const totalPages = Math.ceil(filteredProjects.length / projectsPerPage);
-  const startIndex = (currentPage - 1) * projectsPerPage;
-  const endIndex = startIndex + projectsPerPage;
-  const currentProjects = filteredProjects.slice(startIndex, endIndex);
-
+  // Calculate statistics
+  const totalProjects = projects.filter(p => p.status !== 'archived').length;
+  const activeProjects = projects.filter(p => p.status === 'active').length;
+  const totalBudget = projects.filter(p => p.status !== 'archived').reduce((sum, p) => sum + p.budget, 0);
+  const completedProjects = projects.filter(p => p.status === 'completed').length;
+ 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex items-center gap-4 mb-8">
-        <FolderKanban className="h-8 w-8 text-primary" />
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
-          <p className="text-muted-foreground">Manage and track company projects</p>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <BreadcrumbNavigation/>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      {/* Statistics Cards */}
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Active Projects</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
+            <FolderKanban className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold">
-              {projects.filter(p => p.status === 'active').length}
-            </p>
-            <p className="text-sm text-muted-foreground">Currently in progress</p>
+            <div className="text-xl md:text-2xl font-bold">{totalProjects}</div>
+            <p className="text-xs text-muted-foreground">Active projects</p>
           </CardContent>
         </Card>
-        {user?.role?.name === 'Admin' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Archived Projects</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-4xl font-bold">
-                {projects.filter(p => p.status === 'archived').length}
-              </p>
-              <p className="text-sm text-muted-foreground">Completed projects</p>
-            </CardContent>
-          </Card>
-        )}
 
-        {user?.role?.name === 'Admin' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Total Budget</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-4xl font-bold">
-                ${projects.reduce((sum, p) => sum + p.budget, 0).toLocaleString()}
-              </p>
-              <p className="text-sm text-muted-foreground">Across all projects</p>
-            </CardContent>
-          </Card>
-        )}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl md:text-2xl font-bold">{activeProjects}</div>
+            <p className="text-xs text-muted-foreground">In progress</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Budget</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg md:text-2xl font-bold">${totalBudget.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">All projects</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completed</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl md:text-2xl font-bold">{completedProjects}</div>
+            <p className="text-xs text-muted-foreground">Delivered</p>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="mt-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="flex flex-wrap gap-4 flex-1">
-          <Input
-            placeholder="Search projects..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-xs"
-          />
-          <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by department" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Departments</SelectItem>
-              {departments.map(dept => (
-                <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {user?.role?.name === 'Admin' && (
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="archived">Archived</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
+      {/* Filters with Add Project Button */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div className="flex-1">
+            <DataFilters
+              searchValue={state.searchTerm}
+              onSearchChange={setSearchTerm}
+              searchPlaceholder="Search projects..."
+              filterGroups={filterGroups}
+              activeFilters={state.filters}
+              onFilterChange={setFilter}
+              onClearFilters={clearFilters}
+            />
+          </div>
+          <Button 
+            onClick={handleAddProject}
+            className="w-full sm:w-auto shrink-0"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Project
+          </Button>
         </div>
-        {user?.role?.name === 'Admin' && (
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Project
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Add New Project</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Project Name</label>
-                    <Input
-                      placeholder="Enter project name"
-                      value={newProject.name}
-                      onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
-                    />
+      </div>
+
+      {/* Data Table with Mobile Optimization */}
+      <div className="bg-white rounded-lg border">
+        <div className="overflow-hidden">
+          <DataTable
+            data={filteredProjects}
+            columns={columns}
+            currentPage={state.currentPage}
+            pageSize={state.pageSize}
+            onPageChange={setCurrentPage}
+            onSort={setSort}
+            sortKey={state.sortKey}
+            sortDirection={state.sortDirection}
+            emptyMessage="No projects found"
+          />
+        </div>
+      </div>
+
+      {/* Project View Dialog - Now Fully Responsive */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="w-[95vw] max-w-6xl max-h-[95vh] overflow-y-auto p-4 md:p-6">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-lg md:text-xl">Project Details</DialogTitle>
+          </DialogHeader>
+          {selectedProject && (
+            <div className="space-y-6">
+              {/* Project Overview */}
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg md:text-xl font-semibold break-words">{selectedProject.name}</h3>
+                    <p className="text-muted-foreground break-words">{selectedProject.clientName}</p>
+                    <Badge className={`mt-2 ${getStatusColor(selectedProject.status)}`}>
+                      {selectedProject.status.charAt(0).toUpperCase() + selectedProject.status.slice(1).replace('-', ' ')}
+                    </Badge>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Department</label>
-                    <Select
-                      value={newProject.department}
-                      onValueChange={(value) => {
-                        setNewProject({
-                          ...newProject,
-                          department: value,
-                          assignedEmployees: []
-                        });
-                        setSelectedDepartmentFilter(value);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {departments.map((dept) => (
-                          <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  
+                  <div>
+                    <h4 className="font-medium mb-2">Project Description</h4>
+                    <p className="text-sm text-muted-foreground break-words">{selectedProject.description}</p>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Project Description</label>
-                  <Textarea
-                    placeholder="Enter project description"
-                    value={newProject.description}
-                    onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-                    className="min-h-[100px]"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Client Name</label>
-                    <Input
-                      placeholder="Enter client name"
-                      value={newProject.clientName}
-                      onChange={(e) => setNewProject({ ...newProject, clientName: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Budget</label>
-                    <Input
-                      type="number"
-                      placeholder="Enter project budget"
-                      value={newProject.budget}
-                      onChange={(e) => setNewProject({ ...newProject, budget: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Start Date</label>
-                    <Input
-                      type="date"
-                      value={newProject.startDate}
-                      onChange={(e) => setNewProject({ ...newProject, startDate: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">End Date</label>
-                    <Input
-                      type="date"
-                      value={newProject.endDate}
-                      onChange={(e) => setNewProject({ ...newProject, endDate: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium">Assign Team Members</label>
-                    <span className="text-sm text-muted-foreground">
-                      {newProject.assignedEmployees.length} selected
-                    </span>
-                  </div>
-                  <Popover open={employeePopoverOpen} onOpenChange={setEmployeePopoverOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        className="w-full justify-between"
-                      >
-                        Select team members
-                        <Users className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-0" align="start">
-                      <Command>
-                        <CommandInput
-                          placeholder="Search employees..."
-                          value={employeeSearch}
-                          onValueChange={setEmployeeSearch}
-                        />
-                        <CommandList>
-                          <CommandEmpty>No employees found.</CommandEmpty>
-                          <CommandGroup>
-                            <div className="p-2">
-                              <Select
-                                value={selectedDepartmentFilter || "all"}
-                                onValueChange={(value) => setSelectedDepartmentFilter(value === "all" ? null : value)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Filter by department" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="all">All Departments</SelectItem>
-                                  {departments.map((dept) => (
-                                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <CommandSeparator />
-                            {filteredEmployees.map((employee) => (
-                              <CommandItem
-                                key={employee.id}
-                                onSelect={() => {
-                                  setNewProject(prev => ({
-                                    ...prev,
-                                    assignedEmployees: prev.assignedEmployees.includes(employee.id)
-                                      ? prev.assignedEmployees.filter(id => id !== employee.id)
-                                      : [...prev.assignedEmployees, employee.id]
-                                  }));
-                                }}
-                              >
-                                <div className="flex items-center justify-between w-full">
-                                  <div>
-                                    <p className="font-medium">{employee.name}</p>
-                                    <p className="text-sm text-muted-foreground">{employee.role}</p>
-                                  </div>
-                                  <div className={cn(
-                                    "flex h-4 w-4 items-center justify-center rounded-sm border",
-                                    newProject.assignedEmployees.includes(employee.id)
-                                      ? "bg-primary border-primary"
-                                      : "border-input"
-                                  )}>
-                                    {newProject.assignedEmployees.includes(employee.id) && (
-                                      <Check className="h-3 w-3 text-primary-foreground" />
-                                    )}
-                                  </div>
-                                </div>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  {newProject.assignedEmployees.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {newProject.assignedEmployees.map(id => {
-                        const employee = mockEmployees.find(emp => emp.id === id);
-                        return employee && (
-                          <div
-                            key={employee.id}
-                            className="flex items-center gap-1 bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm"
-                          >
-                            <span>{employee.name}</span>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-4 w-4 p-0 hover:bg-transparent"
-                              onClick={() => setNewProject(prev => ({
-                                ...prev,
-                                assignedEmployees: prev.assignedEmployees.filter(empId => empId !== employee.id)
-                              }))}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        );
-                      })}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium">Department:</span>
+                      <p className="text-muted-foreground break-words">{selectedProject.department}</p>
                     </div>
-                  )}
+                    <div>
+                      <span className="font-medium">Budget:</span>
+                      <p className="text-muted-foreground">${selectedProject.budget.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium">Start Date:</span>
+                      <p className="text-muted-foreground">{format(new Date(selectedProject.startDate), 'PPP')}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium">Deadline:</span>
+                      <p className="text-muted-foreground">{format(new Date(selectedProject.deadline), 'PPP')}</p>
+                    </div>
+                    {selectedProject.endDate && (
+                      <div className="sm:col-span-2">
+                        <span className="font-medium">End Date:</span>
+                        <p className="text-muted-foreground">{format(new Date(selectedProject.endDate), 'PPP')}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <Button className="w-full" onClick={handleAddProject}>
-                  Create Project
+
+                {/* Team Members */}
+                <div className="space-y-4">
+                  <h4 className="font-medium">Team Members ({selectedProject.assignedTeamMembers.length})</h4>
+                  <div className="space-y-3 max-h-80 overflow-y-auto">
+                    {selectedProject.assignedTeamMembers.map((member) => (
+                      <div key={member.id} className="p-3 border rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <Avatar className="h-10 w-10 shrink-0">
+                            <AvatarImage src={member.avatar} alt={member.name} />
+                            <AvatarFallback>{member.name.substring(0, 2)}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium break-words">{member.name}</div>
+                            <div className="text-sm text-muted-foreground break-words">{member.role}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowViewDialog(false)} 
+                  className="w-full sm:w-auto order-2 sm:order-1"
+                >
+                  Close
+                </Button>
+                <Button 
+                  onClick={() => {
+                    setShowViewDialog(false);
+                    handleManageProject(selectedProject.id);
+                  }} 
+                  className="w-full sm:w-auto order-1 sm:order-2"
+                >
+                  Manage Project
                 </Button>
               </div>
-            </DialogContent>
-          </Dialog>
-        )}
-      </div>
-
-      <div className="mt-6">
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                  <TableHead className="min-w-[150px]">Project Name</TableHead>
-                  <TableHead className="hidden md:table-cell">Client</TableHead>
-                  {user?.role?.name === 'Admin' && <TableHead className="hidden md:table-cell">Budget</TableHead>}
-                  <TableHead>Department</TableHead>
-                  <TableHead className="hidden md:table-cell">Start Date</TableHead>
-                  <TableHead className="hidden md:table-cell">End Date</TableHead>
-                  {user?.role?.name === 'Admin' && <TableHead className="hidden md:table-cell">Status</TableHead>}
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-            <TableBody>
-              {currentProjects.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={user?.role?.name === 'Admin' ? 8 : 7} className="text-center text-muted-foreground h-24">
-                    No projects found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                currentProjects.map((project) => (
-                  <TableRow key={project.id}>
-                    <TableCell className="font-medium">{project.name}</TableCell>
-                    <TableCell className="hidden md:table-cell">{project.clientName}</TableCell>
-                    {user?.role?.name === 'Admin' && (
-                      <TableCell className="hidden md:table-cell">${project.budget.toLocaleString()}</TableCell>
-                    )}
-                    <TableCell>{project.department}</TableCell>
-                    <TableCell className="hidden md:table-cell">{formatDate(project.startDate)}</TableCell>
-                    <TableCell className="hidden md:table-cell">{formatDate(project.endDate)}</TableCell>
-                    {user?.role?.name === 'Admin' && (
-                      <TableCell className="hidden md:table-cell">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          project.status === 'active' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {project.status}
-                        </span>
-                      </TableCell>
-                    )}
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="w-[600px] h-[500px] max-w-[90vw] max-h-[90vh] overflow-y-auto">
-                            <DialogTitle>{project.name}</DialogTitle>
-                            <div className="space-y-4">
-                              <div>
-                                <h3 className="text-sm font-medium text-muted-foreground mb-2">Description</h3>
-                                <p className="text-sm">{project.description}</p>
-                              </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <p className="text-sm text-muted-foreground">Client</p>
-                                  <p className="font-medium">{project.clientName}</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm text-muted-foreground">Budget</p>
-                                  <p className="font-medium">${project.budget.toLocaleString()}</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm text-muted-foreground">Department</p>
-                                  <p className="font-medium">{project.department}</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm text-muted-foreground">Status</p>
-                                  <p className="font-medium capitalize">{project.status}</p>
-                                </div>
-                              </div>
-                              <div>
-                                <p className="text-sm text-muted-foreground">Timeline</p>
-                                <p className="font-medium">
-                                  {formatDate(project.startDate)} - {formatDate(project.endDate)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-sm text-muted-foreground">Team Members</p>
-                                <p className="font-medium">
-                                  {mockEmployees
-                                    .filter(emp => project.assignedEmployees.includes(emp.id))
-                                    .map(emp => emp.name)
-                                    .join(', ')}
-                                </p>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                        {user?.role?.name === 'Admin' && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleArchiveProject(project.id)}
-                            >
-                              <Archive className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-
-        {totalPages > 1 && (
-          <div className="flex justify-center gap-2 mt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="flex items-center px-3 py-1 text-sm">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-      </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

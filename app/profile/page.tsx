@@ -1,8 +1,5 @@
-'use client';
+"use client";
 
-
-import { createBankDetails, getBankDetails } from "@/api/bank";
-import { useEffect } from "react";
 import { useState, useRef } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,30 +13,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { User, Upload, Camera, AlertCircle, Building2 } from "lucide-react";
+import { User, Upload, Camera, Building2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-
-interface BankDetailsPayload {
-  name: string;
-  address: string;
-  acName: string;
-  acNumber: string;
-  tax: string;
-  userId: string;
-  branch?: string;
-  additionalInformation?: string;
-}
+import { BreadcrumbNavigation } from "@/components/ui/breadcrumbs-navigation";
 
 interface ProfileData {
   name: string;
   email: string;
   phone: string;
   address: string;
-  dateOfBirth: string;
+  DOB: string;
   idType: "passport" | "citizenship" | "driving-license" | "";
-  frontImage: string | null;
-  panCardImage: string | null;
+  idDocument: string | null;
   avatar: string | null;
   bankDetails: {
     accountNumber: string;
@@ -58,96 +43,23 @@ export default function ProfilePage() {
     email: user?.email || "",
     phone: user?.phone || "",
     address: user?.address || "",
-    dateOfBirth: user?.dateOfBirth || "",
+    DOB: user?.DOB ? new Date(user.DOB).toISOString().split("T")[0] : "",
     idType: user?.idType || "",
-    frontImage: user?.frontImage || null,
-    panCardImage: user?.panCardImage || null,
-    avatar: user?.avatar || null,
+    idDocument: user?.frontImage || null,
+    avatar: user?.profilePic || null,
     bankDetails: user?.bankDetails || {
       accountNumber: "",
       bankName: "",
       bankAddress: "",
       accountHolderName: "",
       panId: "",
-
     },
   });
-  const isPersonalInfoEmpty = () => {
-    return !profileData.name && !profileData.email && !profileData.phone && !profileData.address && !profileData.dateOfBirth;
-  };
 
-  const isBankInfoEmpty = () => {
-    const bank = profileData.bankDetails;
-    return !bank.accountNumber && !bank.bankName && !bank.accountHolderName && !bank.panId && !bank.bankAddress;
-  };
-
-  const isDocumentsEmpty = () => {
-    return !profileData.panCardImage && !profileData.frontImage;
-  };
-
-  const isAvatarEmpty = () => {
-    return !profileData.avatar;
-  };
-
-  useEffect(() => {
-    if (user) {
-      // Set basic profile info first
-      setProfileData(prev => ({
-        ...prev,
-        name: user.name || "",
-        email: user.email || "",
-        phone: user.phone || "",
-        address: user.address || "",
-        idType: user.idType || "",
-        frontImage: user.frontImage || null,
-        panCardImage: user.panCardImage || null,
-        avatar: user.avatar || null,
-      }));
+  console.log("Avatar Preview URL:", profileData.avatar);
 
 
-    }
-  }, [user]);
-
-  const [editingSection, setEditingSection] = useState<'personal' | 'bank' | 'documents' | 'avatar' | null>(null);
-  const [isAdding, setIsAdding] = useState<'personal' | 'bank' | 'documents' | 'avatar' | null>(null);
-
-  useEffect(() => {
-    if (user?.id) {
-      getBankDetails(Number(user.id))
-        .then((data) => {
-          if (data) {
-            setProfileData((prev) => ({
-              ...prev,
-              bankDetails: {
-                accountHolderName: data.acName || "",
-                accountNumber: data.acNumber || "",
-                bankName: data.name || "",
-                panId: data.tax || "",
-                bankAddress: data.address || "",
-                // branch and additionalInformation are intentionally ignored
-              },
-            }));
-          } else {
-            setProfileData((prev) => ({
-              ...prev,
-              bankDetails: {
-                accountHolderName: "",
-                accountNumber: "",
-                bankName: "",
-                panId: "",
-                bankAddress: "",
-                // No branch or additional info
-              },
-            }));
-          }
-        })
-        .catch((error) => {
-          console.error("Bank details fetch error:", error);
-          toast.error("Failed to fetch bank details");
-        });
-    }
-  }, [user]);
-
+  const [editingSection, setEditingSection] = useState<'personal' | 'documents-bank' | null>(null);
 
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -166,7 +78,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handleImageUpload = (type: "front" | "pan") => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
@@ -176,13 +88,8 @@ export default function ProfilePage() {
 
       const reader = new FileReader();
       reader.onloadend = () => {
-        if (type === "front") {
-          setProfileData(prev => ({ ...prev, frontImage: reader.result as string }));
-          toast.success("ID document uploaded successfully");
-        } else {
-          setProfileData(prev => ({ ...prev, panCardImage: reader.result as string }));
-          toast.success("PAN Card uploaded successfully");
-        }
+        setProfileData(prev => ({ ...prev, idDocument: reader.result as string }));
+        toast.success("Document uploaded successfully");
       };
       reader.readAsDataURL(file);
     }
@@ -191,75 +98,27 @@ export default function ProfilePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate based on which section is being edited/added
-    if (editingSection === 'personal' || isAdding === 'personal') {
-      if (!profileData.name || !profileData.email || !profileData.phone || !profileData.address) {
+    if (editingSection === 'personal') {
+      if (!profileData.name || !profileData.email || !profileData.phone || !profileData.address || !profileData.DOB) {
         toast.error("Please fill in all required personal information");
         return;
       }
     }
 
-    if (editingSection === 'bank' || isAdding === 'bank') {
+    if (editingSection === 'documents-bank') {
+      if (!profileData.idType) {
+        toast.error("Please select an identification document type");
+        return;
+      }
+
+      if (!profileData.idDocument) {
+        toast.error("Please upload your identification document");
+        return;
+      }
+
       const bank = profileData.bankDetails;
       if (!bank.accountNumber || !bank.bankName || !bank.accountHolderName || !bank.panId || !bank.bankAddress) {
         toast.error("Please fill in all required bank details");
-        return;
-      }
-
-      if (isAdding === 'bank') {
-        if (!user?.id) {
-          toast.error("User ID is missing. Cannot add bank details.");
-          return;
-        }
-        const payload: BankDetailsPayload = {
-          name: profileData.bankDetails.bankName,
-          address: profileData.bankDetails.bankAddress,
-          acName: profileData.bankDetails.accountHolderName,
-          acNumber: profileData.bankDetails.accountNumber,
-          tax: profileData.bankDetails.panId,
-          userId: user.id,
-          branch: "Nothing",
-          additionalInformation: "Nothing"
-        };
-
-
-
-        try {
-          await createBankDetails(payload);
-          toast.success("Bank details added successfully");
-          setIsAdding(null);
-          setEditingSection(null);
-        } catch (err: any) {
-          toast.error(err.message || "Failed to add bank details");
-        }
-
-        return;
-      }
-    }
-
-
-    if (editingSection === 'personal' || isAdding === 'personal') {
-      if (!profileData.name || !profileData.email || !profileData.phone || !profileData.address || !profileData.dateOfBirth) {
-        toast.error("Please fill in all required personal information");
-        return;
-      }
-    }
-
-
-
-    if (editingSection === 'documents' || isAdding === 'documents') {
-      if (!profileData.panCardImage) {
-        toast.error("Tax Card is required");
-        return;
-      }
-
-      if (!profileData.idType) {
-        toast.error("Please select an ID type");
-        return;
-      }
-
-      if (profileData.idType && !profileData.frontImage) {
-        toast.error("Front image of the selected ID is required");
         return;
       }
     }
@@ -267,68 +126,19 @@ export default function ProfilePage() {
     try {
       await updateProfile({
         ...profileData,
+        frontImage: profileData.idDocument,
         idType: profileData.idType as "passport" | "citizenship" | "driving-license",
       });
       setEditingSection(null);
-      setIsAdding(null);
       toast.success("Profile updated successfully");
     } catch (error) {
       toast.error("Failed to update profile");
     }
   };
 
-  const handleAction = (section: 'personal' | 'bank' | 'documents' | 'avatar', action: 'add' | 'update') => {
-    if (action === 'add') {
-      // Check if data already exists
-      if (section === 'personal' && (profileData.name || profileData.email || profileData.phone || profileData.address || profileData.dateOfBirth)) {
-        toast.error("Personal information already exists. Click Update to modify.");
-        return;
-      }
-      if (section === 'bank' && (profileData.bankDetails.accountNumber || profileData.bankDetails.bankName)) {
-        toast.error("Bank details already exist. Click Update to modify.");
-        return;
-      }
-      if (section === 'documents' && (profileData.panCardImage || profileData.frontImage)) {
-        toast.error("Documents already exist. Click Update to modify.");
-        return;
-      }
-      if (section === 'avatar' && profileData.avatar) {
-        toast.error("Profile picture already exists. Click Update to modify.");
-        return;
-      }
-      setIsAdding(section);
-      setEditingSection(null);
-    } else {
-      // Check if data exists before allowing update
-      if (section === 'personal' && (!profileData.name && !profileData.email && !profileData.phone && !profileData.address && !profileData.dateOfBirth)) {
-        toast.error("No personal information exists. Please add new information first.");
-        return;
-      }
-      if (section === 'bank' && (!profileData.bankDetails.accountNumber && !profileData.bankDetails.bankName)) {
-        toast.error("No bank details exist. Please add new details first.");
-        return;
-      }
-      if (section === 'documents' && !profileData.panCardImage && !profileData.frontImage) {
-        toast.error("No documents exist. Please add new documents first.");
-        return;
-      }
-      if (section === 'avatar' && !profileData.avatar) {
-        toast.error("No profile picture exists. Please add a picture first.");
-        return;
-      }
-      setEditingSection(section);
-      setIsAdding(null);
-    }
-  };
-
-  const getButtonLabel = (section: 'personal' | 'bank' | 'documents' | 'avatar') => {
-    if (isAdding === section) return "Save New Info";
-    if (editingSection === section) return "Savey Updates";
-    return "Update";
-  };
-
   return (
     <div className="container mx-auto py-8">
+      <BreadcrumbNavigation/>
       <div className="flex items-center gap-4 mb-8">
         <User className="h-8 w-8 text-primary" />
         <div>
@@ -336,110 +146,71 @@ export default function ProfilePage() {
           <p className="text-muted-foreground">Update your personal information</p>
         </div>
       </div>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Profile Picture</CardTitle>
-            <div className="flex gap-2">
-              {!editingSection && !isAdding && (
-                isAvatarEmpty() ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="border border-input bg-background hover:bg-accent hover:text-accent-foreground"
-                    onClick={() => handleAction('avatar', 'add')}
-                  >
-                    Add New
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => handleAction('avatar', 'update')}
-                  >
-                    Update
-                  </Button>
-                )
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center space-y-4">
-            <div className="relative">
-              <Avatar className="h-32 w-32">
-                <AvatarImage src={profileData.avatar || undefined} />
-                <AvatarFallback className="text-4xl">
-                  {profileData.name?.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              {(editingSection === 'avatar' || isAdding === 'avatar') && (
-                <Button
-                  type="button"
-                  size="icon"
-                  className="absolute bottom-0 right-0 rounded-full"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Camera className="h-4 w-4" />
-                </Button>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handleAvatarUpload}
-                disabled={editingSection !== 'avatar' && isAdding !== 'avatar'}
-              />
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Click the camera icon to upload a new profile picture
-            </p>
-            {(editingSection === 'avatar' || isAdding === 'avatar') && (
-              <div className="flex justify-end gap-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setEditingSection(null);
-                    setIsAdding(null);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  {isAdding === 'avatar' ? 'Save Updates' : 'Save New Updates'}
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Personal Information with Profile Picture */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Personal Information</CardTitle>
             <div className="flex gap-2">
-              {!editingSection && !isAdding && (
-                isPersonalInfoEmpty() ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="border border-input bg-background hover:bg-accent hover:text-accent-foreground"
-                    onClick={() => handleAction('personal', 'add')}
-                  >
-                    Add New
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => handleAction('personal', 'update')}
-                  >
-                    Update
-                  </Button>
-                )
+              {!editingSection && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingSection('personal')}
+                >
+                  Update
+                </Button>
               )}
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
+            {/* Profile Picture Section */}
+            <div className="flex flex-col items-center space-y-4">
+              <div className="relative">
+                <Avatar className="h-32 w-32 border">
+                  {profileData.avatar && (
+                    <AvatarImage
+                      src={profileData.avatar}
+                      alt="User Avatar"
+                      className="object-cover"
+                      onError={(e) => {
+                        console.log("Image failed:", e.currentTarget.src);
+                      }}
+                    />
+                  )}
+                  <AvatarFallback>
+                    {profileData.name?.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+
+                {editingSection === 'personal' && (
+                  <Button
+                    type="button"
+                    size="icon"
+                    className="absolute bottom-0 right-0 rounded-full"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Camera className="h-4 w-4" />
+                  </Button>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  disabled={editingSection !== 'personal'}
+                />
+              </div>
+              {editingSection === 'personal' && (
+                <p className="text-sm text-muted-foreground text-center">
+                  Click the camera icon to upload a new profile picture
+                </p>
+              )}
+            </div>
+
+            {/* Personal Information Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Full Name</label>
@@ -447,7 +218,7 @@ export default function ProfilePage() {
                   value={profileData.name}
                   onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
                   placeholder="Enter your full name"
-                  disabled={editingSection !== 'personal' && isAdding !== 'personal'}
+                  disabled={editingSection !== 'personal'}
                 />
               </div>
               <div className="space-y-2">
@@ -457,7 +228,7 @@ export default function ProfilePage() {
                   value={profileData.email}
                   onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
                   placeholder="Enter your email"
-                  disabled={editingSection !== 'personal' && isAdding !== 'personal'}
+                  disabled={editingSection !== 'personal'}
                 />
               </div>
               <div className="space-y-2">
@@ -466,215 +237,164 @@ export default function ProfilePage() {
                   value={profileData.phone}
                   onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                   placeholder="Enter your phone number"
-                  disabled={editingSection !== 'personal' && isAdding !== 'personal'}
+                  disabled={editingSection !== 'personal'}
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Date of Birth</label>
                 <Input
                   type="date"
-                  value={profileData.dateOfBirth}
-                  onChange={(e) => setProfileData({ ...profileData, dateOfBirth: e.target.value })}
+                  value={profileData.DOB}
+                  onChange={(e) => setProfileData({ ...profileData, DOB: e.target.value })}
                   placeholder="Select your date of birth"
-                  disabled={editingSection !== 'personal' && isAdding !== 'personal'}
+                  disabled={editingSection !== 'personal'}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-medium">Full Address</label>
                 <Input
                   value={profileData.address}
                   onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
                   placeholder="Country, State, City, Street Address"
-                  disabled={editingSection !== 'personal' && isAdding !== 'personal'}
+                  disabled={editingSection !== 'personal'}
                 />
               </div>
             </div>
-            {(editingSection === 'personal' || isAdding === 'personal') && (
+
+            {editingSection === 'personal' && (
               <div className="flex justify-end gap-4">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    setEditingSection(null);
-                    setIsAdding(null);
-                  }}
+                  onClick={() => setEditingSection(null)}
                 >
                   Cancel
                 </Button>
                 <Button type="submit">
-                  {isAdding === 'personal' ? 'Save Updates' : 'Save New Updates'}
+                  Save Changes
                 </Button>
               </div>
             )}
           </CardContent>
         </Card>
 
+        {/* Combined Documents and Bank Details */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5" />
-              Bank Details
+              Documents & Bank Details
             </CardTitle>
             <div className="flex gap-2">
-              {!editingSection && !isAdding && (
-                isBankInfoEmpty() ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="border border-input bg-background hover:bg-accent hover:text-accent-foreground"
-                    onClick={() => handleAction('bank', 'add')}
-                  >
-                    Add New
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => handleAction('bank', 'update')}
-                  >
-                    Update
-                  </Button>
-                )
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Account Holder's Name</label>
-                <Input
-                  value={profileData.bankDetails.accountHolderName}
-                  onChange={(e) => setProfileData({
-                    ...profileData,
-                    bankDetails: {
-                      ...profileData.bankDetails,
-                      accountHolderName: e.target.value
-                    }
-                  })}
-                  placeholder="Enter account holder's name"
-                  disabled={editingSection !== 'bank' && isAdding !== 'bank'}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Account Number</label>
-                <Input
-                  value={profileData.bankDetails.accountNumber}
-                  onChange={(e) => setProfileData({
-                    ...profileData,
-                    bankDetails: {
-                      ...profileData.bankDetails,
-                      accountNumber: e.target.value
-                    }
-                  })}
-                  placeholder="Enter account number"
-                  disabled={editingSection !== 'bank' && isAdding !== 'bank'}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Bank Name</label>
-                <Input
-                  value={profileData.bankDetails.bankName}
-                  onChange={(e) => setProfileData({
-                    ...profileData,
-                    bankDetails: {
-                      ...profileData.bankDetails,
-                      bankName: e.target.value
-                    }
-                  })}
-                  placeholder="Enter bank name"
-                  disabled={editingSection !== 'bank' && isAdding !== 'bank'}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">PAN ID</label>
-                <Input
-                  value={profileData.bankDetails.panId}
-                  onChange={(e) => setProfileData({
-                    ...profileData,
-                    bankDetails: {
-                      ...profileData.bankDetails,
-                      panId: e.target.value.toUpperCase()
-                    }
-                  })}
-                  placeholder="Enter PAN ID"
-                  disabled={editingSection !== 'bank' && isAdding !== 'bank'}
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-medium">Bank Address</label>
-                <Input
-                  value={profileData.bankDetails.bankAddress}
-                  onChange={(e) => setProfileData({
-                    ...profileData,
-                    bankDetails: {
-                      ...profileData.bankDetails,
-                      bankAddress: e.target.value
-                    }
-                  })}
-                  placeholder="Enter bank address"
-                  disabled={editingSection !== 'bank' && isAdding !== 'bank'}
-                />
-              </div>
-            </div>
-            {(editingSection === 'bank' || isAdding === 'bank') && (
-              <div className="flex justify-end gap-4">
+              {!editingSection && (
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    setEditingSection(null);
-                    setIsAdding(null);
-                  }}
+                  onClick={() => setEditingSection('documents-bank')}
                 >
-                  Cancel
+                  Update
                 </Button>
-                <Button type="submit">
-                  {isAdding === 'bank' ? 'Save New Bank Details' : 'Save Bank Updates'}
-                </Button>
-
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Identification Documents</CardTitle>
-            <div className="flex gap-2">
-              {!editingSection && !isAdding && (
-                isDocumentsEmpty() ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="border border-input bg-background hover:bg-accent hover:text-accent-foreground"
-                    onClick={() => handleAction('documents', 'add')}
-                  >
-                    Add New
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => handleAction('documents', 'update')}
-                  >
-                    Update
-                  </Button>
-                )
               )}
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Bank Details Section */}
             <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Bank Details</h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Account Holder's Name</label>
+                  <Input
+                    value={profileData.bankDetails.accountHolderName}
+                    onChange={(e) => setProfileData({
+                      ...profileData,
+                      bankDetails: {
+                        ...profileData.bankDetails,
+                        accountHolderName: e.target.value
+                      }
+                    })}
+                    placeholder="Enter account holder's name"
+                    disabled={editingSection !== 'documents-bank'}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Account Number</label>
+                  <Input
+                    value={profileData.bankDetails.accountNumber}
+                    onChange={(e) => setProfileData({
+                      ...profileData,
+                      bankDetails: {
+                        ...profileData.bankDetails,
+                        accountNumber: e.target.value
+                      }
+                    })}
+                    placeholder="Enter account number"
+                    disabled={editingSection !== 'documents-bank'}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Bank Name</label>
+                  <Input
+                    value={profileData.bankDetails.bankName}
+                    onChange={(e) => setProfileData({
+                      ...profileData,
+                      bankDetails: {
+                        ...profileData.bankDetails,
+                        bankName: e.target.value
+                      }
+                    })}
+                    placeholder="Enter bank name"
+                    disabled={editingSection !== 'documents-bank'}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">PAN ID</label>
+                  <Input
+                    value={profileData.bankDetails.panId}
+                    onChange={(e) => setProfileData({
+                      ...profileData,
+                      bankDetails: {
+                        ...profileData.bankDetails,
+                        panId: e.target.value.toUpperCase()
+                      }
+                    })}
+                    placeholder="Enter PAN ID"
+                    disabled={editingSection !== 'documents-bank'}
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium">Bank Address</label>
+                  <Input
+                    value={profileData.bankDetails.bankAddress}
+                    onChange={(e) => setProfileData({
+                      ...profileData,
+                      bankDetails: {
+                        ...profileData.bankDetails,
+                        bankAddress: e.target.value
+                      }
+                    })}
+                    placeholder="Enter bank address"
+                    disabled={editingSection !== 'documents-bank'}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Identification Document Section - Moved below Bank Address */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Identification Document</h3>
+
               <div className="space-y-2">
-                <label className="text-sm font-medium">Choose ID Type</label>
+                <label className="text-sm font-medium">Select an identification document</label>
                 <Select
                   value={profileData.idType}
                   onValueChange={(value: "passport" | "citizenship" | "driving-license") =>
-                    setProfileData({ ...profileData, idType: value, frontImage: null })}
-                  disabled={editingSection !== 'documents' && isAdding !== 'documents'}
+                    setProfileData({ ...profileData, idType: value, idDocument: null })}
+                  disabled={editingSection !== 'documents-bank'}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select ID type" />
+                    <SelectValue placeholder="Select identification document type" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="passport">Passport</SelectItem>
@@ -683,72 +403,25 @@ export default function ProfilePage() {
                   </SelectContent>
                 </Select>
               </div>
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-destructive" />
-                <p className="text-sm text-destructive">Tax Card is required</p>
-              </div>
-              <label className={`block ${(editingSection !== 'documents' && isAdding !== 'documents') ? 'pointer-events-none' : 'cursor-pointer'}`}>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleImageUpload("pan")}
-                  disabled={editingSection !== 'documents' && isAdding !== 'documents'}
-                />
-                <div className="border rounded-lg p-4">
-                  {profileData.panCardImage ? (
-                    <div className="relative">
-                      <img
-                        src={profileData.panCardImage}
-                        alt="PAN Card"
-                        className="w-full h-48 object-cover rounded"
-                      />
-                      {(editingSection === 'documents' || isAdding === 'documents') && (
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          className="absolute top-2 right-2"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setProfileData({ ...profileData, panCardImage: null });
-                          }}
-                        >
-                          Remove
-                        </Button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-48 bg-muted rounded hover:bg-muted/80 transition-colors">
-                      <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                      <span className="text-primary hover:underline">Upload Tax Card</span>
-                    </div>
-                  )}
-                </div>
-              </label>
-            </div>
-
-            
 
               {profileData.idType && (
-                <label className={`block ${(editingSection !== 'documents' && isAdding !== 'documents') ? 'pointer-events-none' : 'cursor-pointer'}`}>
+                <label className={`block ${editingSection !== 'documents-bank' ? 'pointer-events-none' : 'cursor-pointer'}`}>
                   <input
                     type="file"
                     className="hidden"
                     accept="image/*"
-                    onChange={handleImageUpload("front")}
-                    disabled={editingSection !== 'documents' && isAdding !== 'documents'}
+                    onChange={handleDocumentUpload}
+                    disabled={editingSection !== 'documents-bank'}
                   />
                   <div className="border rounded-lg p-4">
-                    {profileData.frontImage ? (
+                    {profileData.idDocument ? (
                       <div className="relative">
                         <img
-                          src={profileData.frontImage}
-                          alt="ID Front"
+                          src={profileData.idDocument}
+                          alt="ID Document"
                           className="w-full h-48 object-cover rounded"
                         />
-                        {(editingSection === 'documents' || isAdding === 'documents') && (
+                        {editingSection === 'documents-bank' && (
                           <Button
                             type="button"
                             variant="destructive"
@@ -756,7 +429,7 @@ export default function ProfilePage() {
                             className="absolute top-2 right-2"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setProfileData({ ...profileData, frontImage: null });
+                              setProfileData({ ...profileData, idDocument: null });
                             }}
                           >
                             Remove
@@ -769,7 +442,7 @@ export default function ProfilePage() {
                         <span className="text-primary hover:underline">
                           Upload {profileData.idType === "passport" ? "Passport" :
                             profileData.idType === "driving-license" ? "Driving License" :
-                              "Citizenship"} Front
+                              "Citizenship"} Document
                         </span>
                       </div>
                     )}
@@ -777,20 +450,18 @@ export default function ProfilePage() {
                 </label>
               )}
             </div>
-            {(editingSection === 'documents' || isAdding === 'documents') && (
+
+            {editingSection === 'documents-bank' && (
               <div className="flex justify-end gap-4">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    setEditingSection(null);
-                    setIsAdding(null);
-                  }}
+                  onClick={() => setEditingSection(null)}
                 >
                   Cancel
                 </Button>
                 <Button type="submit">
-                  {isAdding === 'documents' ? 'Save Updates' : 'Save New Updates'}
+                  Save Changes
                 </Button>
               </div>
             )}

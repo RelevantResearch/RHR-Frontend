@@ -13,17 +13,21 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import type { Department } from '@/types/department';
 
 
-import { useDepartments, Department } from "@/hooks/useDepartments";
+
+import { useDepartments } from "@/hooks/useDepartments";
+import { BreadcrumbNavigation } from "@/components/ui/breadcrumbs-navigation";
 
 
 
 export default function DepartmentsPage() {
   const { departments, loading, error, setDepartments, addDepartment, deleteDepartment } = useDepartments();
+  const [departmentToDelete, setDepartmentToDelete] = useState<Department | null>(null);
 
-  // State to track the department selected for deletion
-  const [departmentToDelete, setDepartmentToDelete] = useState<null | { id: string; name: string }>(null);
+  // // State to track the department selected for deletion
+  // const [departmentToDelete, setDepartmentToDelete] = useState<null | { id: string; name: string }>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
 
@@ -35,16 +39,17 @@ export default function DepartmentsPage() {
     description: '',
   });
 
-  const handleDeleteClick = (dept: { id: string; name: string }) => {
+  const handleDeleteClick = (dept: Department) => {
     setDepartmentToDelete(dept);
     setIsDeleteDialogOpen(true);
   };
+  
 
   const confirmDelete = async () => {
     if (!departmentToDelete) return;
 
     try {
-      await deleteDepartment(departmentToDelete.id);
+      await deleteDepartment(String(departmentToDelete.id));
       toast.success(`Department "${departmentToDelete.name}" deleted successfully`);
     } catch (error) {
       toast.error("Failed to delete department");
@@ -80,25 +85,17 @@ export default function DepartmentsPage() {
   };
 
 
-  const handleDeleteDepartment = (id: string) => {
+  const handleDeleteDepartment = (id: number) => {
     setDepartments(departments.filter((dept) => dept.id !== id));
     toast.success("Department deleted successfully");
   };
-
+  
   if (loading) return <p>Loading departments...</p>;
   if (error) return <p className="text-red-500">Error: {error}</p>;
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex items-center gap-4 mb-8">
-        <Building2 className="h-8 w-8 text-primary" />
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Departments</h1>
-          <p className="text-muted-foreground">
-            Manage company departments and services
-          </p>
-        </div>
-      </div>
+    <div className="container">
+      <BreadcrumbNavigation/>
 
       <div className="grid gap-6 md:grid-cols-3">
         <Card>

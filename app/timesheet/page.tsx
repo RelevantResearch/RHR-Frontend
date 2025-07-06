@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CalendarDays, Clock, Plus, Download, ChevronDown, ChevronRight, BadgeCheck, Clock4 } from "lucide-react";
-import { format, differenceInMinutes, parseISO, isWithinInterval, startOfMonth, endOfMonth, addDays, subMonths, isSameDay } from 'date-fns';
+import { CalendarDays, Plus, Download, ChevronDown, ChevronRight, BadgeCheck, Clock4 } from "lucide-react";
+import { format, differenceInMinutes, isWithinInterval, startOfMonth, endOfMonth, subMonths, isSameDay } from 'date-fns';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth-context';
 import { useTimeSheetStore } from '@/lib/timesheet-store';
@@ -17,19 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { BreadcrumbNavigation } from '@/components/ui/breadcrumbs-navigation';
 
-// Available projects for the dropdown
+
 const projects = [
   'Website Redesign',
   'Mobile App Development',
   'Database Migration',
-  'API Integration',
-  'UI/UX Improvements',
-  'Performance Optimization',
-  'Security Updates',
-  'Documentation',
-  'Testing & QA',
-  'Client Support'
 ];
 
 export default function TimesheetPage() {
@@ -214,10 +208,10 @@ export default function TimesheetPage() {
   });
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <div className="container mx-auto">
+      <BreadcrumbNavigation/>
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <CalendarDays className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Timesheet</h1>
             <p className="text-sm text-muted-foreground">
@@ -343,84 +337,88 @@ export default function TimesheetPage() {
           </CardContent>
         </Card>
       )}
+      {sortedMonths.length === 0 ? (
+        <div className="text-center text-muted-foreground mt-8">
+          <p className="text-lg font-medium">No timesheet added for this month.</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {sortedMonths.map((month) => {
+            const isCollapsed = collapsedMonths.includes(month);
+            const monthEntries = Object.values(groupedByMonth[month]).flat();
+            const totalHours = monthEntries.reduce((total, entry) => total + entry.duration, 0);
 
-      <div className="space-y-6">
-        {sortedMonths.map((month) => {
-          const isCollapsed = collapsedMonths.includes(month);
-          const monthEntries = Object.values(groupedByMonth[month]).flat();
-          const totalHours = monthEntries.reduce((total, entry) => total + entry.duration, 0);
-
-          return (
-            <Card key={month}>
-              <CardHeader
-                className="cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => toggleMonth(month)}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>{month}</CardTitle>
-                    <CardDescription>
-                      Total hours: {totalHours.toFixed(1)}h
-                    </CardDescription>
+            return (
+              <Card key={month}>
+                <CardHeader
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => toggleMonth(month)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>{month}</CardTitle>
+                      <CardDescription>
+                        Total hours: {totalHours.toFixed(1)}h
+                      </CardDescription>
+                    </div>
+                    {isCollapsed ? (
+                      <ChevronRight className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
                   </div>
-                  {isCollapsed ? (
-                    <ChevronRight className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </div>
-              </CardHeader>
-              {!isCollapsed && (
-                <CardContent>
-                  <div className="space-y-6">
-                    {Object.entries(groupedByMonth[month]).map(([date, entries]) => (
-                      <div key={date} className="space-y-4">
-                        <h3 className="font-medium">{format(new Date(date), 'EEEE, MMMM d, yyyy')}</h3>
-                        <div className="space-y-3">
-                          {entries.map((entry) => (
-                            <div
-                              key={entry.id}
-                              className="border rounded-lg p-4 flex items-center justify-between"
-                            >
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <h4 className="font-medium">{entry.projectName}</h4>
-                                  {entry.verified ? (
-                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                      <BadgeCheck className="h-3 w-3 mr-1" />
-                                      Verified
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                      <Clock4 className="h-3 w-3 mr-1" />
-                                      Pending
-                                    </span>
-                                  )}
+                </CardHeader>
+                {!isCollapsed && (
+                  <CardContent>
+                    <div className="space-y-6">
+                      {Object.entries(groupedByMonth[month]).map(([date, entries]) => (
+                        <div key={date} className="space-y-4">
+                          <h3 className="font-medium">{format(new Date(date), 'EEEE, MMMM d, yyyy')}</h3>
+                          <div className="space-y-3">
+                            {entries.map((entry) => (
+                              <div
+                                key={entry.id}
+                                className="border rounded-lg p-4 flex items-center justify-between"
+                              >
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="font-medium">{entry.projectName}</h4>
+                                    {entry.verified ? (
+                                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <BadgeCheck className="h-3 w-3 mr-1" />
+                                        Verified
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        <Clock4 className="h-3 w-3 mr-1" />
+                                        Pending
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">{entry.description}</p>
                                 </div>
-                                <p className="text-sm text-muted-foreground">{entry.description}</p>
+                                <div className="text-right">
+                                  <p className="text-sm font-medium">
+                                    {format(new Date(entry.startTime), 'HH:mm')}
+                                    {' - '}
+                                    {format(new Date(entry.endTime), 'HH:mm')}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {entry.duration.toFixed(2)}h
+                                  </p>
+                                </div>
                               </div>
-                              <div className="text-right">
-                                <p className="text-sm font-medium">
-                                  {format(new Date(entry.startTime), 'HH:mm')}
-                                  {' - '}
-                                  {format(new Date(entry.endTime), 'HH:mm')}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  {entry.duration.toFixed(2)}h
-                                </p>
-                              </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              )}
-            </Card>
-          );
-        })}
-      </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
-  );
-}
+)}

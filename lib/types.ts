@@ -1,6 +1,8 @@
 export interface Role {
   id: number;
   name: string;
+  priority?: number;
+  priorityLabel?: string; 
 }
 
 
@@ -15,11 +17,12 @@ export interface User {
   avatar?: string | null;
   joinDate?: string;
   phone?: string;
-  dateOfBirth?: string;
+  DOB?: string;
   country?: string;
   state?: string;
   status?: boolean;
   city?: string;
+  profilePic?: string;
   address?: string;
   idType?: 'passport' | 'citizenship' | 'driving-license';
   frontImage?: string | null;
@@ -61,14 +64,17 @@ export interface WeeklyReport {
 }
 
 export interface Project {
-  id: string;
   name: string;
+  budget: string;
+  client: string;
   description: string;
-  startDate: string;
-  endDate?: string;
-  status: 'active' | 'completed' | 'on-hold';
-  assignedEmployees: string[];
   department: string;
+  startDate: string;
+  deadline: string; // ⬅ expected due date
+  endDate: string;  // ⬅ optional real end date
+  status: 'ACTIVE' | 'PROCRESSING' | 'CANCELLED' | 'COMPLETED' | 'ON_HOLD';
+  assignedEmployees: string[];
+  
 }
 
 export interface Department {
