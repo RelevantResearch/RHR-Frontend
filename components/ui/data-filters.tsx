@@ -154,7 +154,7 @@ export function DataFilters({
   const renderActiveFilters = () => {
     if (!hasActiveFilters) return null;
 
-    const badges = [];
+    const badges: JSX.Element[] = [];
     
     Object.entries(activeFilters).forEach(([groupKey, value]) => {
       const group = filterGroups.find(g => g.key === groupKey);
