@@ -35,7 +35,7 @@ import {
   FormLabel,
   FormMessage,
 } from "../ui/form";
-import { useUserStore } from "@/store/userStore";
+import { useUserStore } from "@/store/user.store";
 
 export default function LoginForm() {
   const [loading, setLoading] = useState(false);
@@ -113,7 +113,7 @@ export default function LoginForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <Card className="w-full max-w-md">
+      <Card className="w-full p-6">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
             <Lock className="h-12 w-12 text-primary" />
