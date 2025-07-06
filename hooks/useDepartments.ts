@@ -46,8 +46,9 @@ export function useDepartments() {
 
   const deleteDepartment = async (id: string) => {
     await apiDeleteDepartment(id);
-    setDepartments((prev) => prev.filter((dept) => dept.id !== id));
+    setDepartments((prev) => prev.filter((dept) => dept.id !== Number(id)));
   };
+
 
   return {
     departments,

@@ -32,12 +32,7 @@ export default function Forbidden403() {
 
     return (
         <>
-            <Head>
-                <link
-                    href="https://fonts.googleapis.com/css2?family=Montserrat:700&family=Share+Tech+Mono&display=swap"
-                    rel="stylesheet"
-                />
-            </Head>
+           
 
             <main className="relative min-h-screen flex items-center justify-center bg-white-50 text-gray-800 bg-none">
                 {/* Big 403 number in background */}

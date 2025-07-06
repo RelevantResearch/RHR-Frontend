@@ -32,6 +32,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { BreadcrumbNavigation } from '@/components/ui/breadcrumbs-navigation';
+import CustomSelect from '@/components/CustomSelect';
+import { useDepartments } from '@/hooks/useDepartments';
 
 interface TeamMember {
   id: string;
@@ -182,7 +184,6 @@ const sampleProjects: Project[] = [
   },
 ];
 
-const departments = ['Web Development', 'Data Analysis', 'Public Impact'];
 const statuses = ['planning', 'active', 'on-hold', 'completed', 'cancelled', 'archived'];
 
 export default function ProjectsPage() {
@@ -190,6 +191,8 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>(sampleProjects);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showViewDialog, setShowViewDialog] = useState(false);
+  const { departments, loading: loadingDepartments } = useDepartments()
+  const [selectedDepartment, setSelectedDepartment] = useState("all");
   
   const {
     state,
@@ -203,17 +206,16 @@ export default function ProjectsPage() {
     initialFilters: { department: 'all', status: 'all' },
   });
 
+
+  const filteredProject = projects.filter(project => {
+    const matchesDepartment =
+      selectedDepartment === 'all' || project.department === selectedDepartment;
+
+    return matchesDepartment;
+  })
+
   // Filter configuration
   const filterGroups: FilterGroup[] = [
-    {
-      key: 'department',
-      label: 'Department',
-      options: departments.map(dept => ({
-        key: dept.toLowerCase().replace(/\s+/g, '-'),
-        label: dept,
-        value: dept,
-      })),
-    },
     {
       key: 'status',
       label: 'Status',
@@ -418,7 +420,15 @@ export default function ProjectsPage() {
   const activeProjects = projects.filter(p => p.status === 'active').length;
   const totalBudget = projects.filter(p => p.status !== 'archived').reduce((sum, p) => sum + p.budget, 0);
   const completedProjects = projects.filter(p => p.status === 'completed').length;
- 
+  
+  const departmentFilter = [
+    { label: "All Departments", value: "all" },
+    ...departments.map(dept => ({
+      label: dept.name,
+      value: dept.name,
+    })),
+  ];
+
   return (
     <div className="space-y-4">
       <BreadcrumbNavigation/>
@@ -470,6 +480,7 @@ export default function ProjectsPage() {
         </Card>
       </div>
 
+      
       {/* Filters with Add Project Button */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
@@ -483,7 +494,15 @@ export default function ProjectsPage() {
               onFilterChange={setFilter}
               onClearFilters={clearFilters}
             />
+           
           </div>
+          <CustomSelect
+                options={departmentFilter}
+                value={selectedDepartment}
+                onValueChange={setSelectedDepartment}
+                placeholder="All Department"
+                className="w-full sm:w-[200px]"
+              />
           <Button 
             onClick={handleAddProject}
             className="w-full sm:w-auto shrink-0"
