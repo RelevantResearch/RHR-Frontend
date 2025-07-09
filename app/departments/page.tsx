@@ -183,9 +183,7 @@ export default function DepartmentsPage() {
               <div className="flex justify-between items-start">
                 <CardTitle>{department.name}</CardTitle>
                 <div className="flex gap-2">
-                  {/* <Button variant="ghost" size="icon">
-                    <Edit className="h-4 w-4" />
-                  </Button> */}
+                  
                   <Button
                     variant="ghost"
                     size="icon"

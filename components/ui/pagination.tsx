@@ -9,7 +9,7 @@ interface PaginationProps {
   totalItems: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
-  label?: string; // e.g. "employees", "records"
+  label?: string; 
   className?: string;
 }
 
