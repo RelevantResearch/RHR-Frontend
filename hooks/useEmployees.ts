@@ -27,7 +27,7 @@ export const useEmployees = () => {
 
         const enriched = rawEmployees.map((emp: any) => {
           const bankDetails = emp.bankInfo;
-          const userRole = emp.UserRole?.[0]?.role;
+          const userRole = emp.UserRole?.role;
           const department = emp.department;
 
           return {
@@ -36,6 +36,7 @@ export const useEmployees = () => {
             avatar: emp.profilePic || DEFAULT_AVATAR,
             documents: DEFAULT_DOCUMENTS,
             position: emp.position || "",
+            DOB: emp.DOB,
             role: userRole?.name || "Employee",
             roleId: userRole?.id ? String(userRole.id) : "",
             employmentType: emp.fullTimer ? "full-time" : "part-time",
@@ -75,4 +76,11 @@ export const useEmployees = () => {
   }, []);
 
   return { employees, loading };
+};
+
+
+export const useEmployeeById = (id: string) => {
+  const { employees, loading } = useEmployees();
+  const employee = employees.find(e => String(e.id) === String(id));
+  return { employee, loading };
 };

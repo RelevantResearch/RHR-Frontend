@@ -1,3 +1,5 @@
+
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -6,16 +8,21 @@ import { cn } from '@/lib/utils';
 interface LoadingOverlayProps {
   isVisible: boolean;
   message?: string;
+  className?: string;
+  fullScreen?: boolean;
 }
 
-export function LoadingOverlay({ isVisible, message = 'Loadinng...' }: LoadingOverlayProps) {
+export function LoadingOverlay({
+  isVisible,
+  message = 'Loading...',
+  className,
+}: LoadingOverlayProps) {
   const [shouldRender, setShouldRender] = useState(isVisible);
 
   useEffect(() => {
     if (isVisible) {
       setShouldRender(true);
     } else {
-      // Delay unmounting to allow fade-out animation
       const timer = setTimeout(() => setShouldRender(false), 300);
       return () => clearTimeout(timer);
     }
@@ -26,13 +33,14 @@ export function LoadingOverlay({ isVisible, message = 'Loadinng...' }: LoadingOv
   return (
     <div
       className={cn(
-        "fixed inset-0 z-[9999] flex items-center justify-center bg-white backdrop-blur-sm transition-all duration-300",
-        isVisible ? "opacity-100" : "opacity-0"
+        'z-[50] flex items-center justify-center bg-white/80 backdrop-blur-sm transition-all duration-300',
+        isVisible ? 'opacity-100' : 'opacity-0',
+        className ?? 'fixed inset-0'
+
       )}
       style={{ pointerEvents: isVisible ? 'auto' : 'none' }}
     >
       <div className="flex flex-col items-center space-y-4">
-
         <div className="flex items-center justify-center pt-6">
           <div className="relative w-28 h-28 overflow-hidden">
             <svg className="absolute w-full h-full z-10">
@@ -44,20 +52,18 @@ export function LoadingOverlay({ isVisible, message = 'Loadinng...' }: LoadingOv
               </mask>
             </svg>
 
-            <div className="absolute inset-0 pointer-events-none"
-              style={{ mask: 'url(#svg-mask)', WebkitMask: 'url(#svg-mask)' }}>
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                mask: 'url(#svg-mask)',
+                WebkitMask: 'url(#svg-mask)',
+              }}
+            >
               <div className="w-full h-[200%] bg-gradient-to-b from-transparent via-[#e72d07] animate-shine relative"></div>
             </div>
           </div>
         </div>
-
-
-        {/* Loading Message */}
-        {/* <p className="text-[#e72d07] text-2xl font-medium  bg-[#e72d07] bg-no-repeat bg-shine bg-[length:50px]
-  bg-clip-text text-transparent  animate-zezzz">{message}</p> */}
-
       </div>
     </div>
-
   );
 }

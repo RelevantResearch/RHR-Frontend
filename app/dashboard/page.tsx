@@ -18,6 +18,7 @@ import { BarChart, Bar, LineChart as RechartsLineChart, Line, XAxis, YAxis, Cart
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { TimeEntry } from '@/lib/types';
+import { BreadcrumbNavigation } from '@/components/ui/breadcrumbs-navigation';
 
 
 // Import events from calendar page's demo data
@@ -214,8 +215,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Welcome, {user?.name}</h1>
-      
+      < BreadcrumbNavigation/>
       <div className="grid gap-6 md:grid-cols-3">
         <Card>
           <CardHeader>
