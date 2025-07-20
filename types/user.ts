@@ -1,3 +1,5 @@
+import { Role } from "./role";
+
 export type EmploymentType = 'full-time' | 'part-time';
 
 export interface BankDetails {
@@ -23,3 +25,46 @@ export interface userForm {
 }
 
 export type userStatus = 'active' | 'inactive';
+
+
+export interface Employee {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  position: string;
+  salary: string,
+  address: string;
+  document: string;
+  fullTimer: boolean;
+  isDeleted: boolean;
+  profilePic?: string | null;
+  department: {
+    id: number;
+    name: string;
+    description: string;
+  };
+  bankInfo: {
+    id: number;
+    name: string;
+    address: string;
+    acName: string;
+    acNumber: string;
+    branch: string;
+    additionalInformation: string;
+    tax: string;
+    documentType: string;
+    document: string;
+  };
+  DOB: string;
+  UserRole: {
+    role: {
+      id: number;
+      name: string;
+    };
+  }[];
+}
+
+
+export type SortableEmployeeKey = 'name' | 'email' | 'role';
+

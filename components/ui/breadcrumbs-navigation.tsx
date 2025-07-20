@@ -28,51 +28,54 @@ const generateDefaultBreadcrumbs = (
   dynamicData?: BreadcrumbNavigationProps['dynamicData']
 ): BreadcrumbItem[] => {
   const segments = pathname.split('/').filter(Boolean);
-  const breadcrumbs: BreadcrumbItem[] = [
-    { label: 'Home', href: '/dashboard', icon: Home }
-  ];
+  const breadcrumbs: BreadcrumbItem[] = [];
+
+  const labelMap: Record<string, string> = {
+    'admin': '',
+    'leave': 'Leave Management',
+    'timesheets': 'Timesheets',
+    'employees': 'Employees',
+    'projects': 'Projects',
+    'departments': 'Departments',
+    'reports': 'Reports',
+    'tickets': 'Tickets',
+    'rbac': 'RBAC',
+    'dashboard': 'Dashboard',
+    'profile': 'Profile',
+    'timesheet': 'My Timesheet',
+    'my-projects': 'My Projects',
+    'add': 'Add Project',
+    'edit': 'Edit Project',
+    'edit-project': 'Edit Project',
+    'add-role': 'Add Role',
+    'edit-role': 'Edit Role',
+    'view-role': 'View Role',
+    'edit-employee': 'Edit Employee',
+    'add-employee': 'Add Employee',
+    'view-employee': 'View Employee',
+  };
+
+  const pathMap: Record<string, string> = {
+    employees: '/admin/employees',
+    timesheets: '/admin/timesheets',
+  };
 
   let currentPath = '';
 
   segments.forEach((segment, index) => {
-    currentPath += `/${segment}`;
+    if (segment === 'admin') return;
 
-    const labelMap: Record<string, string> = {
-      'admin': 'Admin',
-      'leave': 'Leave Management',
-      'timesheets': 'Timesheets',
-      'employees': 'Employees',
-      'projects': 'Projects',
-      'departments': 'Departments',
-      'reports': 'Reports',
-      'tickets': 'Tickets',
-      'rbac': 'RBAC',
-      'dashboard': 'Dashboard',
-      'profile': 'Profile',
-      'timesheet': 'My Timesheet',
-      'my-projects': 'My Projects',
-      'add': 'Add Project',
-      'edit': 'Edit Project',
-      'edit-project': 'Edit Project',
-      'add-role': 'Add Role',
-      'edit-role': 'Edit Role',
-      'view-role': 'View Role'
-    };
+    const label = labelMap[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
+    const isLast = index === segments.length - 1;
 
-    let label = labelMap[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
-    const isLastItem = index === segments.length - 1;
-
-    if (segment === 'edit-role' && dynamicData?.roleName) {
-      label = `Edit Role`;
-    }
-
-    const nonNavigableSegments = ['admin'];
+    const href = !isLast
+      ? pathMap[segment] || (currentPath += `/${segment}`)
+      : undefined;
 
     breadcrumbs.push({
       label,
-      href: isLastItem || nonNavigableSegments.includes(segment) ? undefined : currentPath
+      href,
     });
-
   });
 
   if (pathname.includes('/edit-role') && dynamicData?.roleName) {
@@ -84,9 +87,22 @@ const generateDefaultBreadcrumbs = (
   if (pathname.includes('/edit-employee') && dynamicData?.employeeName) {
     breadcrumbs.push({ label: dynamicData.employeeName });
   }
+  if (pathname.includes('/view-employee') && dynamicData?.employeeName) {
+    breadcrumbs.push({ label: dynamicData.employeeName });
+  }
+  if (pathname.includes('/projects') && dynamicData?.projectName) {
+    breadcrumbs.push({ label: dynamicData.projectName });
+  }
 
-  return breadcrumbs;
+  if (pathname === '/dashboard' || pathname === '/') {
+    return [{ label: 'Dashboard', href: '/dashboard', icon: Home }];
+  }
+
+  return [{ label: 'Dashboard', href: '/dashboard', icon: Home }, ...breadcrumbs];
 };
+
+
+
 
 export function BreadcrumbNavigation({ items, className, dynamicData }: BreadcrumbNavigationProps) {
   const pathname = usePathname() ?? '';

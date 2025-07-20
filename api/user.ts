@@ -61,7 +61,7 @@ export const updateUserProfile = async (payload: any) => {
 };
 
 
-// Fetch all users (admin only)
+
 export const getAllEmployees = async () => {
   try {
     const response = await axiosInstance.get("/user/admin/all");
@@ -73,10 +73,11 @@ export const getAllEmployees = async () => {
 };
 
 
+
 // Delete users
 export const deleteUserApi = async (id: number | string) => {
   try {
-    await axiosInstance.delete(`/user/admin/${id}`);
+    await axiosInstance.patch(`/user/admin/${id}`);
   } catch (error) {
     throw new Error("Failed to delete user");
   }
