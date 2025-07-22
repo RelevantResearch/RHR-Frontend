@@ -10,7 +10,7 @@ import {
   setToLocalStorage,
   removeFromLocalStorage,
 } from "./utils";
-
+ 
 interface AuthContextType {
   user: User | null;
   accessToken: string | null;
@@ -34,7 +34,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const storedToken = getFromLocalStorage("accessToken") as string | null;
         const storedUser = getFromLocalStorage("user") as User | null;
 
-        console.log("[Auth] Token:", storedToken);
         console.log("[Auth] User:", storedUser);
 
         if (!storedToken || !storedUser || !storedUser.role) {
@@ -64,35 +63,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, []);
 
-  // In your login function:
   const login = async (email: string, password: string) => {
     showLoading("Taking you in...");
     setIsLoading(true);
     await new Promise((res) => setTimeout(res, 1500));
     try {
-      const { user, accessToken } = await login_api(email, password);
+      const response = await login_api(email, password);
+
+      // ❗ Validate the response
+      if (!response?.user || !response?.accessToken) {
+        throw new Error("Invalid credentials");
+      }
 
       const userWithRole: User = {
-        ...user,
-        role: user.UserRole?.[0]?.role || null,
+        ...response.user,
+        role: response.user.UserRole?.[0]?.role || null,
       };
 
-      // Set both localStorage and cookies
       setUser(userWithRole);
-      setAccessToken(accessToken);
+      setAccessToken(response.accessToken);
       setToLocalStorage("user", userWithRole);
-      setToLocalStorage("accessToken", accessToken);
+      setToLocalStorage("accessToken", response.accessToken);
 
-      // Set cookies that middleware can read
       document.cookie = `user=${encodeURIComponent(JSON.stringify(userWithRole))}; path=/`;
-      document.cookie = `accessToken=${accessToken}; path=/`;
+      document.cookie = `accessToken=${response.accessToken}; path=/`;
     } catch (err) {
       console.error("[Login] Failed:", err);
+      throw err;
     } finally {
       setIsLoading(false);
       hideLoading();
     }
   };
+
 
   const logout = async () => {
     showLoading("Signing you out...");
