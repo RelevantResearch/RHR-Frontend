@@ -19,7 +19,7 @@ export interface Column<T> {
   render?: (item: T) => React.ReactNode;
   className?: string;
   sortable?: boolean;
-  responsive?: 'hidden' | 'sm' | 'md' | 'lg' | 'xl'; // Hide on smaller screens
+  responsive?: 'hidden' | 'sm' | 'md' | 'lg' | 'xl';
 }
 
 export interface DataTableProps<T> {
@@ -118,7 +118,7 @@ export function DataTable<T extends Record<string, any>>({
     };
 
     return (
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 p-2">
         <div className="text-sm text-muted-foreground order-2 sm:order-1">
           Showing {startIndex + 1} to {Math.min(endIndex, displayedTotal)} of {displayedTotal} items
         </div>

@@ -1,17 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DataTable, Column } from '@/components/ui/data-table';
 import { DataFilters, FilterGroup } from '@/components/ui/data-filters';
-import { ActionButtons, commonActions, ActionButton } from '@/components/ui/action-buttons';
-import { PageHeader } from '@/components/ui/page-header';
+import { ActionButtons, ActionButton } from '@/components/ui/action-buttons';
 import { useTableState, useFilteredData } from '@/hooks/use-table-state';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Plus, FolderKanban, Calendar, DollarSign, Users, Eye, Edit, Archive, Mail, Phone, Building2, ArrowLeft } from 'lucide-react';
+import { Plus, FolderKanban, Calendar, DollarSign, Users, Eye, Edit, Archive, Loader2, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import {
@@ -20,180 +19,37 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { BreadcrumbNavigation } from '@/components/ui/breadcrumbs-navigation';
 import CustomSelect from '@/components/CustomSelect';
 import { useDepartments } from '@/hooks/useDepartments';
+import { useProjects } from '@/hooks/useProjects';
+import { Project } from '@/types/projects';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { deleteProject } from '@/api/project';
 
-interface TeamMember {
-  id: string;
-  name: string;
-  role: string;
-  email: string;
-  phone: string;
-  avatar?: string;
-}
+type ProjectStatus = 'PROCESSING' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED' | 'ARCHIVED';
 
-interface Project {
-  id: string;
-  name: string;
-  clientName: string;
-  description: string;
-  department: string;
-  budget: number;
-  status: 'planning' | 'active' | 'on-hold' | 'completed' | 'cancelled' | 'archived';
-  startDate: string;
-  endDate?: string;
-  deadline: string;
-  assignedTeamMembers: TeamMember[];
-  progress: number;
-}
+const statusDisplayMap: Record<ProjectStatus, { label: string; color: string }> = {
+  'ACTIVE': { label: 'Active', color: 'bg-green-100 text-green-800' },
+  'PROCESSING': { label: 'Processing', color: 'bg-blue-100 text-blue-800' },
+  'ON_HOLD': { label: 'On Hold', color: 'bg-yellow-100 text-yellow-800' },
+  'COMPLETED': { label: 'Completed', color: 'bg-purple-100 text-purple-800' },
+  'CANCELLED': { label: 'Cancelled', color: 'bg-red-100 text-red-800' },
+  'ARCHIVED': { label: 'Archived', color: 'bg-gray-100 text-gray-800' }
+};
 
-const sampleProjects: Project[] = [
-  {
-    id: '1',
-    name: 'E-commerce Platform Redesign',
-    clientName: 'TechCorp Solutions',
-    description: 'Complete redesign of the e-commerce platform with modern UI/UX and improved performance. This project involves updating the entire frontend architecture, implementing new design systems, and optimizing backend performance for better user experience.',
-    department: 'Web Development',
-    budget: 75000,
-    status: 'active',
-    startDate: '2024-01-15',
-    endDate: '2024-06-30',
-    deadline: '2024-06-30',
-    assignedTeamMembers: [
-      { 
-        id: '1', 
-        name: 'John Smith', 
-        role: 'Project Lead', 
-        email: 'john.smith@company.com',
-        phone: '+1 (555) 123-4567',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=256&h=256&fit=crop&crop=faces' 
-      },
-      { 
-        id: '2', 
-        name: 'Jane Doe', 
-        role: 'Frontend Developer', 
-        email: 'jane.doe@company.com',
-        phone: '+1 (555) 234-5678',
-        avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=256&h=256&fit=crop&crop=faces' 
-      },
-      { 
-        id: '3', 
-        name: 'Mike Johnson', 
-        role: 'Backend Developer', 
-        email: 'mike.johnson@company.com',
-        phone: '+1 (555) 345-6789',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=256&h=256&fit=crop&crop=faces' 
-      },
-    ],
-    progress: 65,
-  },
-  {
-    id: '2',
-    name: 'Data Analytics Dashboard',
-    clientName: 'Analytics Inc',
-    description: 'Development of a comprehensive data analytics dashboard for business intelligence. Features include real-time data visualization, custom reporting tools, and advanced analytics capabilities.',
-    department: 'Data Analysis',
-    budget: 45000,
-    status: 'planning',
-    startDate: '2024-03-01',
-    deadline: '2024-08-15',
-    assignedTeamMembers: [
-      { 
-        id: '4', 
-        name: 'Sarah Wilson', 
-        role: 'Data Scientist', 
-        email: 'sarah.wilson@company.com',
-        phone: '+1 (555) 456-7890',
-        avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=256&h=256&fit=crop&crop=faces' 
-      },
-      { 
-        id: '5', 
-        name: 'David Brown', 
-        role: 'Data Analyst', 
-        email: 'david.brown@company.com',
-        phone: '+1 (555) 567-8901',
-        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=256&h=256&fit=crop&crop=faces' 
-      },
-    ],
-    progress: 25,
-  },
-  {
-    id: '3',
-    name: 'Community Outreach Program',
-    clientName: 'Local Government',
-    description: 'Digital platform for community engagement and public service delivery. Includes citizen portal, service request management, and community feedback systems.',
-    department: 'Public Impact',
-    budget: 30000,
-    status: 'completed',
-    startDate: '2023-09-01',
-    endDate: '2024-02-28',
-    deadline: '2024-02-28',
-    assignedTeamMembers: [
-      { 
-        id: '6', 
-        name: 'Emily Davis', 
-        role: 'Program Manager', 
-        email: 'emily.davis@company.com',
-        phone: '+1 (555) 678-9012',
-        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=256&h=256&fit=crop&crop=faces' 
-      },
-      { 
-        id: '7', 
-        name: 'Alex Chen', 
-        role: 'Community Coordinator', 
-        email: 'alex.chen@company.com',
-        phone: '+1 (555) 789-0123',
-        avatar: 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?w=256&h=256&fit=crop&crop=faces' 
-      },
-    ],
-    progress: 100,
-  },
-  {
-    id: '4',
-    name: 'Mobile App Development',
-    clientName: 'StartupXYZ',
-    description: 'Cross-platform mobile application for task management and productivity. Features include task scheduling, team collaboration, and progress tracking.',
-    department: 'Web Development',
-    budget: 60000,
-    status: 'on-hold',
-    startDate: '2024-02-01',
-    deadline: '2024-09-30',
-    assignedTeamMembers: [
-      { 
-        id: '8', 
-        name: 'Tom Anderson', 
-        role: 'Mobile Developer', 
-        email: 'tom.anderson@company.com',
-        phone: '+1 (555) 890-1234',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=256&h=256&fit=crop&crop=faces' 
-      },
-    ],
-    progress: 40,
-  },
-];
-
-const statuses = ['planning', 'active', 'on-hold', 'completed', 'cancelled', 'archived'];
+const statuses = Object.keys(statusDisplayMap) as ProjectStatus[];
 
 export default function ProjectsPage() {
   const router = useRouter();
-  const [projects, setProjects] = useState<Project[]>(sampleProjects);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showViewDialog, setShowViewDialog] = useState(false);
-  const { departments, loading: loadingDepartments } = useDepartments()
+  const { departments, loading: loadingDepartments } = useDepartments();
+  const { data: apiProjects, isLoading: loadingProjects, error, refetch } = useProjects();
   const [selectedDepartment, setSelectedDepartment] = useState("all");
-  
+  const [selectedStatus, setSelectedStatus] = useState<ProjectStatus | 'all'>('all');
+
+
   const {
     state,
     setCurrentPage,
@@ -206,88 +62,82 @@ export default function ProjectsPage() {
     initialFilters: { department: 'all', status: 'all' },
   });
 
+  const projects = useMemo(() => {
+    if (!apiProjects || !departments.length) return [];
+    return apiProjects
+      .filter(project => !project.isdeleted)
+      .map(project => ({
+        ...project,
+        department: departments.find(dept => dept.id === project.departmentId)
+      }));
+  }, [apiProjects, departments]);
 
-  const filteredProject = projects.filter(project => {
-    const matchesDepartment =
-      selectedDepartment === 'all' || project.department === selectedDepartment;
+  const statusFilterOptions = [
+    { label: 'All Status', value: 'all' },
+    ...statuses.map(status => ({
+      label: statusDisplayMap[status].label,
+      value: status,
+    })),
+  ];
 
-    return matchesDepartment;
-  })
 
-  // Filter configuration
   const filterGroups: FilterGroup[] = [
     {
       key: 'status',
       label: 'Status',
       options: statuses.map(status => ({
         key: status,
-        label: status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' '),
+        label: statusDisplayMap[status].label,
         value: status,
       })),
     },
   ];
 
-  // Custom filter function
-  const customFilter = (project: Project, filters: Record<string, string | string[]>) => {
-    const { department, status } = filters;
-    
-    if (department && department !== 'all' && project.department !== department) {
+  const customFilter = (project: Project) => {
+
+    if (selectedDepartment && selectedDepartment !== 'all' && project.department?.name !== selectedDepartment) {
       return false;
     }
-    
-    if (status && status !== 'all' && project.status !== status) {
+
+    if (selectedStatus !== 'all' && project.status !== selectedStatus) {
       return false;
     }
-    
+
+
     return true;
   };
 
-  // Get filtered data
   const filteredProjects = useFilteredData(
     projects,
     state,
-    ['name', 'clientName', 'description', 'department'],
+    ['name', 'client', 'description'],
     customFilter
   );
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'planning':
-        return 'bg-blue-100 text-blue-800';
-      case 'on-hold':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'completed':
-        return 'bg-purple-100 text-purple-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      case 'archived':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const getStatusDisplay = (status: string) => {
+    const statusKey = status as ProjectStatus;
+    return statusDisplayMap[statusKey] || { label: status, color: 'bg-gray-100 text-gray-800' };
+  };
+
+  const handleManageProject = (id: string) => {
+    router.push(`/projects/edit-projects?id=${id}`);
   };
 
   const handleViewProject = (project: Project) => {
-    setSelectedProject(project);
-    setShowViewDialog(true);
+    router.push(`/projects/view-projects?id=${project.id}`);
   };
 
-  
-
-  const handleManageProject = (id: string) => {
-    router.push('/projects/edit');
+  const handleArchiveProject = async (id: string) => {
+    try {
+      // await archiveProject(id);
+      await deleteProject(id);
+      toast.success('Project archived successfully');
+      refetch();
+    } catch (error) {
+      toast.error('Failed to archive project');
+    }
   };
 
-  const handleArchiveProject = (id: string) => {
-    setProjects(prev => prev.map(project => 
-      project.id === id ? { ...project, status: 'archived' as const } : project
-    ));
-    toast.success('Project archived successfully');
-  };
-
-  // Table columns configuration
   const columns: Column<Project>[] = [
     {
       key: 'name',
@@ -297,9 +147,9 @@ export default function ProjectsPage() {
       render: (project) => (
         <div className="space-y-1">
           <div className="font-medium text-sm md:text-base truncate">{project.name}</div>
-          <div className="text-xs md:text-sm text-gray-500 truncate">{project.clientName}</div>
+          <div className="text-xs md:text-sm text-gray-500 truncate">{project.client}</div>
           {/* Show department on mobile */}
-          <div className="md:hidden text-xs text-gray-500">{project.department}</div>
+          <div className="md:hidden text-xs text-gray-500">{project.department?.name || 'Unknown'}</div>
         </div>
       ),
     },
@@ -309,18 +159,21 @@ export default function ProjectsPage() {
       responsive: 'md',
       sortable: true,
       render: (project) => (
-        <span className="text-sm">{project.department}</span>
+        <span className="text-sm">{project.department?.name || 'Unknown'}</span>
       ),
     },
     {
       key: 'status',
       header: 'Status',
       responsive: 'sm',
-      render: (project) => (
-        <Badge className={`${getStatusColor(project.status)} text-xs`}>
-          {project.status.charAt(0).toUpperCase() + project.status.slice(1).replace('-', ' ')}
-        </Badge>
-      ),
+      render: (project) => {
+        const statusDisplay = getStatusDisplay(project.status);
+        return (
+          <Badge className={`${statusDisplay.color} text-xs`}>
+            {statusDisplay.label}
+          </Badge>
+        );
+      },
     },
     {
       key: 'budget',
@@ -328,19 +181,19 @@ export default function ProjectsPage() {
       responsive: 'lg',
       sortable: true,
       render: (project) => (
-        <span className="text-sm font-medium">${project.budget.toLocaleString()}</span>
+        <span className="text-sm font-medium">${parseInt(project.budget).toLocaleString()}</span>
       ),
     },
     {
-      key: 'assignedTeamMembers',
+      key: 'userAssignments',
       header: 'Team Size',
       responsive: 'md',
       render: (project) => (
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4 text-gray-500" />
-          <span className="font-medium text-sm">{project.assignedTeamMembers.length}</span>
+          <span className="font-medium text-sm">{project.userAssignments?.length || 0}</span>
           <span className="text-xs text-gray-500 hidden lg:inline">
-            {project.assignedTeamMembers.length === 1 ? 'member' : 'members'}
+            {(project.userAssignments?.length || 0) === 1 ? 'member' : 'members'}
           </span>
         </div>
       ),
@@ -367,41 +220,30 @@ export default function ProjectsPage() {
           },
           {
             label: 'Manage',
-            onClick: () => handleManageProject(project.id),
+            onClick: () => handleManageProject(project.id.toString()),
             icon: Edit,
             variant: 'ghost',
           },
           {
             label: 'Archive',
-            onClick: () => {},
+            onClick: () => { },
             icon: Archive,
             variant: 'ghost',
             className: 'text-orange-600 hover:text-orange-700',
             renderCustom: () => (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
+              <ConfirmDialog
+                triggerButton={
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-orange-600 hover:text-orange-700">
                     <Archive className="h-4 w-4" />
                   </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="max-w-md mx-4">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Archive Project</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to archive "{project.name}"? This will move the project to archived status and it won't appear in active project lists.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      className="bg-orange-500 hover:bg-orange-600"
-                      onClick={() => handleArchiveProject(project.id)}
-                    >
-                      Archive Project
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                }
+                title="Archive Project"
+                description={`Are you sure you want to archive "${project.name}"? This will move the project to archived status and it won't appear in active project lists.`}
+                confirmText="Archive Project"
+                cancelText="Cancel"
+                confirmClassName="bg-orange-500 hover:bg-orange-600"
+                onConfirm={() => handleArchiveProject(project.id.toString())}
+              />
             ),
           },
         ];
@@ -412,15 +254,17 @@ export default function ProjectsPage() {
   ];
 
   const handleAddProject = () => {
-    router.push('/projects/add');
+    router.push('/projects/add-projects');
   };
 
   // Calculate statistics
-  const totalProjects = projects.filter(p => p.status !== 'archived').length;
-  const activeProjects = projects.filter(p => p.status === 'active').length;
-  const totalBudget = projects.filter(p => p.status !== 'archived').reduce((sum, p) => sum + p.budget, 0);
-  const completedProjects = projects.filter(p => p.status === 'completed').length;
-  
+  const totalProjects = projects.filter(p => p.status !== 'ARCHIVED').length;
+  const activeProjects = projects.filter(p => p.status === 'ACTIVE').length;
+  const totalBudget = projects
+    .filter(p => p.status !== 'ARCHIVED')
+    .reduce((sum, p) => sum + parseInt(p.budget), 0);
+  const completedProjects = projects.filter(p => p.status === 'COMPLETED').length;
+
   const departmentFilter = [
     { label: "All Departments", value: "all" },
     ...departments.map(dept => ({
@@ -429,9 +273,51 @@ export default function ProjectsPage() {
     })),
   ];
 
+  // Loading state
+  const isLoading = loadingProjects || loadingDepartments;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <BreadcrumbNavigation />
+        <div className="flex items-center justify-center py-12">
+          <div className="flex items-center gap-3">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span className="text-lg">Loading projects...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <BreadcrumbNavigation />
+        <div className="flex flex-col items-center justify-center py-12 space-y-4">
+          <AlertTriangle className="h-12 w-12 text-red-500" />
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-red-600">Error loading projects</h3>
+            <p className="text-gray-600 mt-1">
+              {error.message || 'Something went wrong while fetching projects'}
+            </p>
+            <Button
+              onClick={() => refetch()}
+              variant="outline"
+              className="mt-4"
+            >
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <BreadcrumbNavigation/>
+      <BreadcrumbNavigation />
 
       {/* Statistics Cards */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
@@ -480,8 +366,6 @@ export default function ProjectsPage() {
         </Card>
       </div>
 
-      
-      {/* Filters with Add Project Button */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div className="flex-1">
@@ -489,21 +373,25 @@ export default function ProjectsPage() {
               searchValue={state.searchTerm}
               onSearchChange={setSearchTerm}
               searchPlaceholder="Search projects..."
-              filterGroups={filterGroups}
-              activeFilters={state.filters}
               onFilterChange={setFilter}
               onClearFilters={clearFilters}
             />
-           
           </div>
           <CustomSelect
-                options={departmentFilter}
-                value={selectedDepartment}
-                onValueChange={setSelectedDepartment}
-                placeholder="All Department"
-                className="w-full sm:w-[200px]"
-              />
-          <Button 
+            options={statusFilterOptions}
+            value={selectedStatus}
+            onValueChange={(val) => setSelectedStatus(val as ProjectStatus | 'all')}
+            placeholder="All Status"
+            className="w-full sm:w-[200px]"
+          />
+          <CustomSelect
+            options={departmentFilter}
+            value={selectedDepartment}
+            onValueChange={setSelectedDepartment}
+            placeholder="All Department"
+            className="w-full sm:w-[200px]"
+          />
+          <Button
             onClick={handleAddProject}
             className="w-full sm:w-auto shrink-0"
           >
@@ -513,7 +401,6 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {/* Data Table with Mobile Optimization */}
       <div className="bg-white rounded-lg border">
         <div className="overflow-hidden">
           <DataTable
@@ -530,7 +417,6 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {/* Project View Dialog - Now Fully Responsive */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
         <DialogContent className="w-[95vw] max-w-6xl max-h-[95vh] overflow-y-auto p-4 md:p-6">
           <DialogHeader className="space-y-3">
@@ -538,17 +424,16 @@ export default function ProjectsPage() {
           </DialogHeader>
           {selectedProject && (
             <div className="space-y-6">
-              {/* Project Overview */}
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-lg md:text-xl font-semibold break-words">{selectedProject.name}</h3>
-                    <p className="text-muted-foreground break-words">{selectedProject.clientName}</p>
-                    <Badge className={`mt-2 ${getStatusColor(selectedProject.status)}`}>
-                      {selectedProject.status.charAt(0).toUpperCase() + selectedProject.status.slice(1).replace('-', ' ')}
+                    <p className="text-muted-foreground break-words">{selectedProject.client}</p>
+                    <Badge className={`mt-2 ${getStatusDisplay(selectedProject.status).color}`}>
+                      {getStatusDisplay(selectedProject.status).label}
                     </Badge>
                   </div>
-                  
+
                   <div>
                     <h4 className="font-medium mb-2">Project Description</h4>
                     <p className="text-sm text-muted-foreground break-words">{selectedProject.description}</p>
@@ -557,11 +442,11 @@ export default function ProjectsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="font-medium">Department:</span>
-                      <p className="text-muted-foreground break-words">{selectedProject.department}</p>
+                      <p className="text-muted-foreground break-words">{selectedProject.department?.name || 'Unknown'}</p>
                     </div>
                     <div>
                       <span className="font-medium">Budget:</span>
-                      <p className="text-muted-foreground">${selectedProject.budget.toLocaleString()}</p>
+                      <p className="text-muted-foreground">${parseInt(selectedProject.budget).toLocaleString()}</p>
                     </div>
                     <div>
                       <span className="font-medium">Start Date:</span>
@@ -580,42 +465,48 @@ export default function ProjectsPage() {
                   </div>
                 </div>
 
-                {/* Team Members */}
                 <div className="space-y-4">
-                  <h4 className="font-medium">Team Members ({selectedProject.assignedTeamMembers.length})</h4>
+                  <h4 className="font-medium">Team Members ({selectedProject.userAssignments?.length || 0})</h4>
                   <div className="space-y-3 max-h-80 overflow-y-auto">
-                    {selectedProject.assignedTeamMembers.map((member) => (
-                      <div key={member.id} className="p-3 border rounded-lg">
-                        <div className="flex items-start gap-3">
-                          <Avatar className="h-10 w-10 shrink-0">
-                            <AvatarImage src={member.avatar} alt={member.name} />
-                            <AvatarFallback>{member.name.substring(0, 2)}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium break-words">{member.name}</div>
-                            <div className="text-sm text-muted-foreground break-words">{member.role}</div>
+                    {selectedProject.userAssignments && selectedProject.userAssignments.length > 0 ? (
+                      selectedProject.userAssignments.map((assignment) => (
+                        <div key={assignment.id} className="p-3 border rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <Avatar className="h-10 w-10 shrink-0">
+                              <AvatarImage src={assignment.user.profilePic || undefined} alt={assignment.user.name} />
+                              <AvatarFallback>{assignment.user.name.substring(0, 2)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium break-words">{assignment.user.name}</div>
+                              <div className="text-sm text-muted-foreground break-words">{assignment.role}</div>
+                              <div className="text-xs text-muted-foreground break-words">{assignment.user.email}</div>
+                            </div>
                           </div>
                         </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-6 text-gray-500">
+                        <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No team members assigned</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowViewDialog(false)} 
+                <Button
+                  variant="outline"
+                  onClick={() => setShowViewDialog(false)}
                   className="w-full sm:w-auto order-2 sm:order-1"
                 >
                   Close
                 </Button>
-                <Button 
+                <Button
                   onClick={() => {
                     setShowViewDialog(false);
-                    handleManageProject(selectedProject.id);
-                  }} 
+                    handleManageProject(selectedProject.id.toString());
+                  }}
                   className="w-full sm:w-auto order-1 sm:order-2"
                 >
                   Manage Project

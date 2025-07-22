@@ -1,27 +1,21 @@
-"use client";
-import { useEffect, useState } from 'react';
-import { Project } from '@/types/project';
-import { createProject as apiCreateProject } from '@/api/project';
-import { toast } from 'sonner';
+// hooks/useProjects.ts
+import { useQuery } from "@tanstack/react-query";
+import { getAllProject, getProjectId } from "@/api/project";
+import { Project } from "@/types/projects"; // your defined Project type
 
 export const useProjects = () => {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(false);
+  return useQuery<Project[], Error>({
+    queryKey: ["projects"],
+    queryFn: getAllProject,
+    staleTime: 5 * 60 * 1000,
+  });
+};
 
-
-  const createProject = async (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => {
-    try {
-      const newProject = await apiCreateProject(project);
-      setProjects(prev => [...prev, newProject]);
-      toast.success("Project created successfully");
-    } catch (error) {
-      toast.error("Error creating project");
-    }
-  };
-
-  return {
-    projects,
-    loading,
-    createProject,
-  };
+export const useProjectById = (id: string | number | undefined) => {
+  return useQuery<Project, Error>({
+    queryKey: ['project', id],
+    queryFn: () => getProjectId(id!),
+    enabled: !!id, 
+    staleTime: 5 * 60 * 1000,
+  });
 };

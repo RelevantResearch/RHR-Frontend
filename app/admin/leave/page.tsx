@@ -1,28 +1,29 @@
+
 'use client';
 
-import { useState } from 'react';
-import { useAuth } from '@/lib/auth-context';
-import { useLeaveStore } from '@/lib/leave-store';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { Tabs, TabsContent } from "@/components/ui/tabs";
-import type { LeaveRequest } from '@/types/leave';
+import { Search } from 'lucide-react';
+
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
+import { ReusableTable, TableColumn } from '@/components/customeTable/DataTable';
 import { BreadcrumbNavigation } from '@/components/ui/breadcrumbs-navigation';
 
-
+import { useAuth } from '@/lib/auth-context';
+import { useLeaveStore } from '@/lib/leave-store';
+import type { LeaveRequest } from '@/types/leave';
 
 const dummyRequests: LeaveRequest[] = [
   {
     id: 1,
     employeeId: 1,
     employeeName: 'John Admin',
-    reason: 'Personal',
+    reason: 'Vacation janu parni xa',
     status: 'pending',
-    type: 'personal', 
+    type: 'personal',
     hours: 8,
     startDate: '2025-07-01',
     endDate: '2025-07-01',
@@ -33,7 +34,7 @@ const dummyRequests: LeaveRequest[] = [
     id: 2,
     employeeId: 2,
     employeeName: 'Jane Smith',
-    reason: 'Vacation',
+    reason: 'Vacation janu parni xa',
     status: 'approved',
     type: 'annual',
     hours: 16,
@@ -46,9 +47,9 @@ const dummyRequests: LeaveRequest[] = [
     id: 3,
     employeeId: 3,
     employeeName: 'Alice Johnson',
-    reason: 'Medical',
+    reason: 'Medical janu parni xa',
     status: 'rejected',
-    type: 'personal', 
+    type: 'personal',
     hours: 4,
     startDate: '2025-06-25',
     endDate: '2025-06-25',
@@ -57,187 +58,187 @@ const dummyRequests: LeaveRequest[] = [
   },
 ];
 
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'approved':
+      return 'bg-green-100 text-green-800';
+    case 'rejected':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-yellow-100 text-yellow-800';
+  }
+};
 
 export default function AdminLeavePage() {
   const { user } = useAuth();
-  const { getAllLeaveRequests, updateLeaveRequest, updateLeaveBalance, calculateLeaveBalance } = useLeaveStore();
+  const { updateLeaveRequest, updateLeaveBalance, calculateLeaveBalance } = useLeaveStore();
+
   const [searchTerm, setSearchTerm] = useState('');
+  const [tab, setTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
 
-  // // Mock employees - in a real app, this would come from your user store
-  // const employees = [
-  //   { id: '1', name: 'John Admin', employmentType: 'full-time' },
-  //   { id: '2', name: 'Jane Employee', employmentType: 'full-time' },
-  // ];
+  const filteredRequests = useMemo(() => {
+    return dummyRequests
+      .filter((r) => r.status === tab)
+      .filter((r) => r.employeeName.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [tab, searchTerm]);
 
-  const leaveRequests = getAllLeaveRequests().sort((a, b) =>
-    new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
-  );
-
-  // const filteredRequests = leaveRequests.filter(request =>
-  //   request.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //   request.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //   request.status.toLowerCase().includes(searchTerm.toLowerCase())
-  // );
-
-  const filteredRequests = dummyRequests;
-
-  const handleUpdateStatus = (id: string, status: 'approved' | 'rejected') => {
-    const request = leaveRequests.find(r => r.id === id);
+  const handleUpdateStatus = (id: number, status: 'approved' | 'rejected') => {
+    const request = dummyRequests.find(r => r.id === id);
     if (!request) return;
 
-    updateLeaveRequest(id, status, user?.name || '');
-
+    updateLeaveRequest(String(id), status, user?.name || 'Admin');
     if (status === 'approved') {
-      updateLeaveBalance(request.userId, request.type, request.hours);
+      updateLeaveBalance(String(request.employeeId), request.type, request.hours);
     }
-
-    toast.success(`Leave request ${status}`);
+    toast.success(`Request ${status}`);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-yellow-100 text-yellow-800';
-    }
-  };
+  const leaveColumns: TableColumn<LeaveRequest>[] = [
+    {
+      key: 'employeeName',
+      header: 'Employee',
+      render: (item) => (
+        <div className="font-medium">
+          {item.employeeName}
+        </div>
+      ),
+    },
+    {
+      key: 'type',
+      header: 'Type',
+      render: (item) => <span className="capitalize">{item.type}</span>,
+    },
+    {
+      key: 'description',
+      header: 'Description',
+      render: (item) => <span className="capitalize">{item.reason}</span>,
+    },
+    {
+      key: 'hours',
+      header: 'Hours',
+    },
+    {
+      key: 'startDate',
+      header: 'Start',
+      render: (item) => format(new Date(item.startDate), 'PP'),
+    },
+    {
+      key: 'endDate',
+      header: 'End',
+      render: (item) => format(new Date(item.endDate), 'PP'),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (item) => (
+        <span className={`px-2 py-1 text-xs rounded ${getStatusColor(item.status)}`}>
+          {item.status}
+        </span>
+      ),
+    },
+    {
+      key: 'available',
+      header: 'Balance',
+      render: (item) =>
+        `${calculateLeaveBalance(String(item.employeeId))?.[item.type] ?? 0}h`,
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (item) => {
+        if (item.status !== 'pending') {
+          return item.reviewedAt ? (
+            <div className="text-xs text-muted-foreground">
+              Reviewed by {item.reviewedBy} on {format(new Date(item.reviewedAt), 'PPp')}
+            </div>
+          ) : null;
+        }
+        return (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleUpdateStatus(item.id, 'rejected')}
+            >
+              Reject
+            </Button>
+            <Button size="sm" onClick={() => handleUpdateStatus(item.id, 'approved')}>
+              Approve
+            </Button>
+          </div>
+        );
+      },
+    },
+  ];
 
-  const pendingRequests = leaveRequests.filter(r => r.status === 'pending').length;
-  const approvedRequests = leaveRequests.filter(r => r.status === 'approved').length;
-  const rejectedRequests = leaveRequests.filter(r => r.status === 'rejected').length;
+  const counts = {
+    pending: dummyRequests.filter(r => r.status === 'pending').length,
+    approved: dummyRequests.filter(r => r.status === 'approved').length,
+    rejected: dummyRequests.filter(r => r.status === 'rejected').length,
+  };
 
   return (
     <div className="container mx-auto">
-      <BreadcrumbNavigation/>
-      
+      <BreadcrumbNavigation />
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-3 mt-4">
         <Card>
           <CardHeader>
-            <CardTitle>Pending Requests</CardTitle>
+            <CardTitle>Pending</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold">{pendingRequests}</p>
-            <p className="text-sm text-muted-foreground">Awaiting review</p>
+            <p className="text-4xl font-bold">{counts.pending}</p>
+            <p className="text-sm text-muted-foreground">Awaiting Review</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Approved Requests</CardTitle>
+            <CardTitle>Approved</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold">{approvedRequests}</p>
-            <p className="text-sm text-muted-foreground">This month</p>
+            <p className="text-4xl font-bold">{counts.approved}</p>
+            <p className="text-sm text-muted-foreground">This Month</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Rejected Requests</CardTitle>
+            <CardTitle>Rejected</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold">{rejectedRequests}</p>
-            <p className="text-sm text-muted-foreground">This month</p>
+            <p className="text-4xl font-bold">{counts.rejected}</p>
+            <p className="text-sm text-muted-foreground">This Month</p>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="requests" className="mt-8">
+      <div className="mt-8 space-y-4">
+        <div className="flex justify-between items-center">
+          
 
-        <TabsContent value="requests">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-semibold">Leave Requests</h2>
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search requests..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search employee..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
+        </div>
 
-          <div className="space-y-4">
-          {filteredRequests.map((request: LeaveRequest) => (
-              <Card key={request.id}>
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-semibold">{request.employeeName}</h3>
-                      <p className="text-sm text-muted-foreground mt-1">{request.reason}</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <div className="flex items-center gap-3">
-                        <span className={`px-2 py-1 rounded text-xs ${getStatusColor(request.status)}`}>
-                          {request.status}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          Available {request.type} leave: <strong>
-                            {/* {calculateLeaveBalance(request.employeeId)?.[request.type] ?? 0}h */}
-                            {calculateLeaveBalance(request.employeeId.toString())?.[request.type] ?? 0}h
-                          </strong>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Leave Type</p>
-                      <p className="font-medium capitalize">{request.type}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Duration</p>
-                      <p className="font-medium">{request.hours}h</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Start Date</p>
-                      <p className="font-medium">{format(new Date(request.startDate), 'PP')}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">End Date</p>
-                      <p className="font-medium">{format(new Date(request.endDate), 'PP')}</p>
-                    </div>
-                  </div>
-                  {request.status === 'pending' && (
-                    <div className="mt-4 flex justify-end gap-4">
-                      <Button
-                        variant="outline"
-                        onClick={() => handleUpdateStatus(request.id.toString(), 'rejected')}
-                      >
-                        Reject
-                      </Button>
-                      <Button
-                        onClick={() => handleUpdateStatus(request.id.toString(), 'approved')}
-                      >
-                        Approve
-                      </Button>
-                    </div>
-                  )}
-                  {request.reviewedAt && (
-                    <div className="mt-4 text-sm text-muted-foreground">
-                      Reviewed by {request.reviewedBy} on {format(new Date(request.reviewedAt), 'PPp')}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-            {filteredRequests.length === 0 && (
-              <Card>
-                <CardContent className="text-center py-8 text-muted-foreground">
-                  No leave requests found
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </TabsContent>
-
-      </Tabs>
+        <ReusableTable
+          data={filteredRequests}
+          columns={leaveColumns}
+          currentPage={1}
+          totalPages={1}
+          pageSize={filteredRequests.length}
+          totalItems={filteredRequests.length}
+          onPageChange={() => {}}
+          onPageSizeChange={() => {}}
+        />
+      </div>
     </div>
   );
 }

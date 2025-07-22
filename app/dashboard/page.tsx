@@ -372,7 +372,7 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* <Card>
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CalendarIcon className="h-5 w-5" />
@@ -405,7 +405,7 @@ export default function Dashboard() {
             )}
           </div>
         </CardContent>
-      </Card> */}
+      </Card>
     </div>
   );
 }

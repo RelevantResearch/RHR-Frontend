@@ -44,9 +44,10 @@ const generateDefaultBreadcrumbs = (
     'profile': 'Profile',
     'timesheet': 'My Timesheet',
     'my-projects': 'My Projects',
-    'add': 'Add Project',
-    'edit': 'Edit Project',
+    'add-project': 'Add Project',
     'edit-project': 'Edit Project',
+    'view-projects': 'View Project',
+    'edit': 'Edit Project',
     'add-role': 'Add Role',
     'edit-role': 'Edit Role',
     'view-role': 'View Role',
@@ -58,6 +59,7 @@ const generateDefaultBreadcrumbs = (
   const pathMap: Record<string, string> = {
     employees: '/admin/employees',
     timesheets: '/admin/timesheets',
+     projects: '/projects',
   };
 
   let currentPath = '';
@@ -90,8 +92,19 @@ const generateDefaultBreadcrumbs = (
   if (pathname.includes('/view-employee') && dynamicData?.employeeName) {
     breadcrumbs.push({ label: dynamicData.employeeName });
   }
-  if (pathname.includes('/projects') && dynamicData?.projectName) {
+  if (pathname.includes('/edit-projects') && dynamicData?.projectName) {
     breadcrumbs.push({ label: dynamicData.projectName });
+  }
+  if (pathname.includes('/view-projects') && dynamicData?.projectName) {
+    breadcrumbs.push({ label: dynamicData.projectName });
+  }
+
+  // 🆕 Ensure projects root comes before edit/view project if missing
+  const hasProjectsCrumb = breadcrumbs.some(b => b.label === 'Projects');
+  const isEditOrViewProject = pathname.includes('/edit-projects') || pathname.includes('/view-projects');
+
+  if (isEditOrViewProject && !hasProjectsCrumb) {
+    breadcrumbs.splice(1, 0, { label: 'Projects', href: '/projects' });
   }
 
   if (pathname === '/dashboard' || pathname === '/') {
@@ -114,9 +127,10 @@ export function BreadcrumbNavigation({ items, className, dynamicData }: Breadcru
       : undefined;
 
   const breadcrumbItems = items || generateDefaultBreadcrumbs(pathname, searchParams, dynamicData);
+  
 
   return (
-    <nav className={cn("flex items-center space-x-1 text-sm text-muted-foreground mb-6", className)}>
+    <nav className={cn("flex items-center space-x-1 text-sm text-muted-foreground", className)}>
       {breadcrumbItems.map((item, index) => {
         const isLast = index === breadcrumbItems.length - 1;
         const Icon = item.icon;
@@ -163,6 +177,7 @@ export function useBreadcrumbs() {
   const setBreadcrumbs = (items: BreadcrumbItem[]) => {
     return items;
   };
+  
 
   const getBreadcrumbs = (dynamicData?: BreadcrumbNavigationProps['dynamicData']) => {
     return generateDefaultBreadcrumbs(pathname, searchParams, dynamicData);
