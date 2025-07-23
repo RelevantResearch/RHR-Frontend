@@ -78,6 +78,8 @@ export interface Project {
 }
 
 export interface Department {
+  includes(arg0: string): boolean;
+  toLowerCase(): unknown;
   id: string;
   name: string;
   description: string;

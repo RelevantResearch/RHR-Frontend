@@ -28,6 +28,7 @@ export type userStatus = 'active' | 'inactive';
 
 
 export interface Employee {
+  joinDate: any;
   id: number;
   name: string;
   email: string;

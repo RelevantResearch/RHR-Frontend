@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { BreadcrumbNavigation } from '@/components/ui/breadcrumbs-navigation';
 import { EmployeeForm, EmployeeFormData } from '@/components/employeeForm';
 import { Employee } from '@/types/user';
-import { getUserById } from '@/api/user';
+import { getUserById, updateUserByAdmin } from '@/api/user';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 
@@ -22,16 +22,18 @@ export default function EditEmployeePage() {
     }
   }, [user, router]);
 
+
   const mapApiToFormData = (data: Employee): EmployeeFormData => ({
     name: data.name,
     email: data.email,
     phone: data.phone,
-    department: data.department?.name || '',
+    department: String(data.department?.id || ''),
     position: data.position || '',
     salary: String(data.salary ?? ''),
     joinDate: data.DOB || '',
     employmentType: data.fullTimer ? 'full-time' : 'part-time',
-    role: data.UserRole?.[0]?.role.name === 'Admin' ? 'Admin' : 'Employee',
+    // role: String(data.UserRole?.[0]?.role.id || ''),
+    role: String(data.UserRole?.[0]?.role?.id || ''),
     address: data.address || '',
     status: data.isDeleted ? 'inactive' : 'active',
     bankDetails: {
@@ -58,8 +60,6 @@ export default function EditEmployeePage() {
     }
   }, [isError, router]);
 
-
-
   const [formEmployee, setFormEmployee] = useState<EmployeeFormData | null>(null);
   const [originalEmployee, setOriginalEmployee] = useState<EmployeeFormData | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -71,6 +71,18 @@ export default function EditEmployeePage() {
       setOriginalEmployee(formData);
     }
   }, [employeeData]);
+
+    useEffect(() => {
+    if (employeeData) {
+      // Add this ONE line to see the role data structure
+      console.log('UserRole data:', employeeData.UserRole);
+
+      const formData = mapApiToFormData(employeeData);
+      setFormEmployee(formData);
+      setOriginalEmployee(formData);
+    }
+  }, [employeeData]);
+
 
   if (user?.role?.name !== 'Admin') {
     return null;
@@ -85,7 +97,7 @@ export default function EditEmployeePage() {
   }
 
   if (isError || !formEmployee) {
-    return null; 
+    return null;
   }
 
   const handleUpdateEmployee = async () => {
@@ -98,10 +110,14 @@ export default function EditEmployeePage() {
 
     setIsUpdating(true);
     try {
-      // await updateUserById(Number(employeeId), formEmployee);
+      // Pass the form data directly - the API function handles the conversion
+      console.log('Form data being sent:', formEmployee);
+
+      await updateUserByAdmin(Number(employeeId), formEmployee);
       toast.success('Employee updated successfully');
       router.push('/admin/employees');
-    } catch {
+    } catch (error) {
+      console.error('Update error:', error);
       toast.error('Failed to update employee');
     } finally {
       setIsUpdating(false);
