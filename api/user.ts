@@ -1,7 +1,6 @@
 import { EmployeeFormData } from "@/components/employeeForm";
 import axiosInstance from "./axios";
 
-// Fetch currently logged-in user's info (no ID required)
 export const getMyInfo = async () => {
   try {
     const response = await axiosInstance.get("/user/me");
@@ -12,7 +11,6 @@ export const getMyInfo = async () => {
   }
 };
 
-// Fetch any user by ID (admin use case)
 export const getUserById = async (id: number) => {
   try {
     const response = await axiosInstance.get(`/user/admin/${id}`);
@@ -23,39 +21,19 @@ export const getUserById = async (id: number) => {
   }
 };
 
-// export const updateUserByAdmin = async (id: number, formData: EmployeeFormData) => {
-//   try {
-//     const payload = {
-//       departmentId: parseInt(formData.department), // assuming it's ID
-//       roleId: formData.role === 'Admin' ? 1 : 2,    // or map appropriately
-//       position: formData.position,
-//       salary: parseFloat(formData.salary),
-//       // fullTimer: formData.employmentType === 'full-time',
-//       fullTimer: formData.employmentType === 'full time',
-//       isDeleted: formData.status === 'inactive'
-//     };
-
-//     const response = await axiosInstance.put(`/user/admin/${id}`, payload);
-//     return response.data;
-//   } catch (error) {
-//     console.error(`Failed to update user with ID ${id}`, error);
-//     throw error;
-//   }
-// };
-
 
 export const updateUserByAdmin = async (id: number, formData: EmployeeFormData) => {
   try {
     const payload = {
-      departmentId: parseInt(formData.department), // Convert string to number
-      roleId: parseInt(formData.role),   // Map role name to ID
+      departmentId: parseInt(formData.department), 
+      roleId: parseInt(formData.role),   
       position: formData.position,
-      salary: parseFloat(formData.salary),          // Convert string to number
-      fullTimer: formData.employmentType === 'full-time', // Match form values
+      salary: parseFloat(formData.salary),         
+      fullTimer: formData.employmentType === 'full-time', 
       isDeleted: formData.status === 'inactive'
     };
 
-    console.log('API payload being sent:', payload); // For debugging
+    console.log('API payload being sent:', payload); 
 
     const response = await axiosInstance.put(`/user/admin/${id}`, payload);
     return response.data;
