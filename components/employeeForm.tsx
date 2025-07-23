@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useDepartmentsQuery, useRolesQuery } from '@/lib/queries';
 import CustomSelect from "@/components/CustomSelect";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Save, User, Briefcase, AlertCircle } from "lucide-react";
+import { ArrowLeft, Save, User, Briefcase, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { format } from 'date-fns';
 import { userForm, userStatus } from "@/types/user";
 import { addEmployeeSchema, editEmployeeSchema, AddEmployeeFormData, EditEmployeeFormData } from "@/lib/schemas/employee.schema";
@@ -15,6 +15,7 @@ import { z } from 'zod';
 export interface EmployeeFormData extends userForm {
     salary: string;
     status: userStatus;
+
 }
 
 export const createEmptyEmployee = (): EmployeeFormData => ({
@@ -66,8 +67,8 @@ export function EmployeeForm({
     const isFieldReadOnly = (fieldName: string) => readOnlyFields.includes(fieldName);
     const { data: departments = [], isLoading: deptLoading, error: deptError } = useDepartmentsQuery();
     const { data: roles = [], isLoading: roleLoading, error: roleError } = useRolesQuery();
+    const [showPassword, setShowPassword] = useState(false);
 
-    // Validate form data
     const validateForm = () => {
         try {
             if (isEditMode) {
@@ -103,7 +104,6 @@ export function EmployeeForm({
     const validateField = (fieldName: string, value: any) => {
         try {
             if (isEditMode) {
-                // For edit mode, only validate if it's an editable field
                 const editableFields = ['department', 'position', 'role', 'employmentType', 'status', 'salary'];
                 if (editableFields.includes(fieldName)) {
                     const fieldSchema = editEmployeeSchema.shape[fieldName as keyof EditEmployeeFormData];
@@ -112,14 +112,12 @@ export function EmployeeForm({
                     }
                 }
             } else {
-                // For add mode, validate the specific field
                 const fieldSchema = addEmployeeSchema.shape[fieldName as keyof AddEmployeeFormData];
                 if (fieldSchema) {
                     fieldSchema.parse(value);
                 }
             }
 
-            // Clear error if validation passes
             if (errors[fieldName]) {
                 const newErrors = { ...errors };
                 delete newErrors[fieldName];
@@ -155,7 +153,6 @@ export function EmployeeForm({
         });
         setTouched(newTouched);
 
-        // Validate and submit if valid
         if (validateForm()) {
             onSubmit();
         }
@@ -163,11 +160,12 @@ export function EmployeeForm({
 
     const departmentOptions = departments.map((dept) => ({
         label: dept.name,
-        value: dept.name,
+        value: String(dept.id),
     }));
+
     const roleOptions = roles.map((role) => ({
         label: role.name,
-        value: role.name,
+        value: String(role.id),
     }));
 
     // Error display component
@@ -181,9 +179,12 @@ export function EmployeeForm({
         );
     };
 
+    console.log("Roles query result:", { data: roles, isLoading: roleLoading, error: roleError });
+
+
     return (
         <div className="space-y-6">
-            <Card className="rounded-lg text-card-foreground shadow-lg border-0 bg-white/70 backdrop-blur-s">
+            <Card className="rounded-lg text-card-foreground shadow-lg border-0 bg-white/70 backdrop-blur-s mt-6">
                 <CardHeader className="pb-4">
                     <CardTitle className="flex items-center gap-2 text-lg font-medium">
                         <User className="h-5 w-5 text-orange-500" />
@@ -222,20 +223,48 @@ export function EmployeeForm({
                             <ErrorMessage fieldName="email" />
                         </div>
                         {!isEditMode && (
-                            <div className="space-y-2">
+                            // <div className="space-y-2">
+                            //     <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                            //         Password <span className="text-orange-500">*</span>
+                            //     </label>
+                            //     <Input
+                            //         type="password"
+                            //         placeholder="Enter password"
+                            //         value={employee.password || ''}
+                            //         onChange={(e) => handleFieldChange('password', e.target.value)}
+                            //         className={`border-gray-200 focus:border-orange-500 focus:ring-orange-500/20 transition-all duration-200 ${errors.password && touched.password ? 'border-red-500 focus:border-red-500' : ''
+                            //             }`}
+                            //     />
+                            //     <ErrorMessage fieldName="password" />
+                            // </div>
+                            <div className="space-y-2 relative">
                                 <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                                     Password <span className="text-orange-500">*</span>
                                 </label>
-                                <Input
-                                    type="password"
-                                    placeholder="Enter password"
-                                    value={employee.password || ''}
-                                    onChange={(e) => handleFieldChange('password', e.target.value)}
-                                    className={`border-gray-200 focus:border-orange-500 focus:ring-orange-500/20 transition-all duration-200 ${errors.password && touched.password ? 'border-red-500 focus:border-red-500' : ''
-                                        }`}
-                                />
+                                <div className="relative">
+                                    <Input
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="Enter password"
+                                        value={employee.password || ''}
+                                        onChange={(e) => handleFieldChange('password', e.target.value)}
+                                        className={`pr-10 border-gray-200 focus:border-orange-500 focus:ring-orange-500/20 transition-all duration-200 ${errors.password && touched.password ? 'border-red-500 focus:border-red-500' : ''
+                                            }`}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(prev => !prev)}
+                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-800"
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff className="h-4 w-4" />
+                                        ) : (
+                                            <Eye className="h-4 w-4" />
+                                        )}
+                                    </button>
+                                </div>
                                 <ErrorMessage fieldName="password" />
                             </div>
+
                         )}
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">

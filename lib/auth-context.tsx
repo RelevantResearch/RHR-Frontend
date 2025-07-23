@@ -34,10 +34,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const storedToken = getFromLocalStorage("accessToken") as string | null;
         const storedUser = getFromLocalStorage("user") as User | null;
 
-        console.log("[Auth] User:", storedUser);
 
         if (!storedToken || !storedUser || !storedUser.role) {
-          console.log("[Auth] Missing token or role. Logging out.");
           removeFromLocalStorage("user");
           removeFromLocalStorage("accessToken");
           setUser(null);

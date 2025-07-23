@@ -1,7 +1,6 @@
 'use client';
 
 import { useEmployeeByIdQuery } from '@/lib/queries';
-import { useEmployeeById } from '@/hooks/useEmployees';
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

@@ -12,8 +12,6 @@ import {
   Department,
   ProjectFormData,
   ProjectFormProps,
-  ApiProject,
-  UserAssignment,
   Project,
   BaseUserAssignment,
 } from '@/types/projects';
@@ -33,8 +31,6 @@ const statusMap: Record<string, string> = {
   completed: 'COMPLETED',
   cancelled: 'CANCELLED',
 };
-
-
 
 
 export default function EditProjectPage() {
@@ -95,7 +91,7 @@ export default function EditProjectPage() {
         project.userAssignments?.map((ua: BaseUserAssignment) => ({
           userId: ua.userId,
           role: ua.role,
-          name: '', // Since BaseUserAssignment doesn't have user data
+          name: '',
           email: '',
           department: '',
           id: ua.userId.toString(),

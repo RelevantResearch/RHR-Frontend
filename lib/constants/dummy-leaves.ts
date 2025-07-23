@@ -1,0 +1,43 @@
+import type { LeaveRequest } from "@/types/leave";
+
+export const dummyRequests: LeaveRequest[] = [
+  {
+    id: 1,
+    employeeId: 1,
+    employeeName: 'John Admin',
+    reason: 'Vacation janu parni xa',
+    status: 'pending',
+    type: 'personal',
+    hours: 8,
+    startDate: '2025-07-01',
+    endDate: '2025-07-01',
+    reviewedAt: null,
+    reviewedBy: null,
+  },
+  {
+    id: 2,
+    employeeId: 2,
+    employeeName: 'Jane Smith',
+    reason: 'Vacation janu parni xa',
+    status: 'approved',
+    type: 'annual',
+    hours: 16,
+    startDate: '2025-07-05',
+    endDate: '2025-07-06',
+    reviewedAt: '2025-06-20T10:00:00Z',
+    reviewedBy: 'HR Department',
+  },
+  {
+    id: 3,
+    employeeId: 3,
+    employeeName: 'Alice Johnson',
+    reason: 'Medical janu parni xa',
+    status: 'rejected',
+    type: 'personal',
+    hours: 4,
+    startDate: '2025-06-25',
+    endDate: '2025-06-25',
+    reviewedAt: '2025-06-22T14:30:00Z',
+    reviewedBy: 'HR Department',
+  },
+];

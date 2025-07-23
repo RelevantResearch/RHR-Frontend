@@ -13,7 +13,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useEmployeesQuery } from '@/lib/queries';
 import { validateProjectForm, validateField } from '@/lib/schemas/project.schema';
 import {
-  ApiProject,
+  Project,
   ProjectFormData,
   ProjectFormProps,
   User,
@@ -87,7 +87,7 @@ export default function ProjectForm({
     }
   };
 
-  const isApiProject = (data: any): data is ApiProject => {
+  const isProject = (data: any): data is Project => {
     return data && typeof data === 'object' &&
       'client' in data &&
       'userAssignments' in data &&
@@ -113,7 +113,7 @@ export default function ProjectForm({
 
   useEffect(() => {
     if (initialData) {
-      if (isApiProject(initialData)) {
+      if (isProject(initialData)) {
         setFormData({
           name: initialData.name || '',
           clientName: initialData.client || '',
